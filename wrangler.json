@@ -24,5 +24,11 @@
   ],
   "vars": {
     "PAYPAL_ENV": "sandbox"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SALES",
+      "id": "5548df474960416da402ec77bb6c0bba"
+    }
+  ]
 }
