@@ -48,29 +48,57 @@ const jsonLd = {
         <dt>Type</dt><dd>Raw (ungraded)</dd>
         <dt>Item #</dt><dd>CSU-{card.id}</dd>
       </dl>
-      <button disabled>Checkout coming soon</button>
+      <button class="buy" disabled>Checkout coming soon</button>
       <p class="note">The scans are the exact card you'll receive. $1.25 shipping per order, plus $0.50 for each additional card.</p>
     </div>
   </div>
 
   <dialog id="zoom" aria-label="Card photo">
     <button class="close" aria-label="Close">×</button>
-    <img alt="" />
+    <div class="frame"><img alt="" /></div>
+    <div class="sides">
+      <button type="button" data-side="0">Front</button>
+      {card.back && <button type="button" data-side="1">Back</button>}
+      <span class="hint">Click photo to zoom</span>
+    </div>
   </dialog>
 </Base>
 
 <script>
   // Photo viewer: opens on the same page instead of navigating to the image.
   // The links keep their href so the photo still opens if JavaScript is off.
+  // Click the photo to zoom in at that spot; move the mouse (or drag on a
+  // phone) to look around; click again to zoom out. Detail is capped by the
+  // scan resolution (~817px wide at the 2026-10 NAPS2 settings).
   const dialog = document.getElementById("zoom") as HTMLDialogElement;
-  const big = dialog.querySelector("img") as HTMLImageElement;
+  const frame = dialog.querySelector(".frame") as HTMLDivElement;
+  const big = frame.querySelector("img") as HTMLImageElement;
   const links = [...document.querySelectorAll<HTMLAnchorElement>("a[data-zoom]")];
+  const sideButtons = [...dialog.querySelectorAll<HTMLButtonElement>("[data-side]")];
   let current = 0;
+  let zoomed = false;
+
+  const setZoom = (on: boolean) => {
+    zoomed = on;
+    big.classList.toggle("zoomed", on);
+    if (!on) big.style.transformOrigin = "center";
+  };
+
+  const focusPoint = (e: PointerEvent | MouseEvent) => {
+    const r = big.getBoundingClientRect();
+    // getBoundingClientRect is the scaled box while zoomed; dividing by its
+    // own size keeps the percentages right either way.
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    big.style.transformOrigin = `${Math.min(100, Math.max(0, x))}% ${Math.min(100, Math.max(0, y))}%`;
+  };
 
   const show = (i: number) => {
     current = (i + links.length) % links.length;
+    setZoom(false);
     big.src = links[current].href;
     big.alt = links[current].querySelector("img")?.alt ?? "";
+    sideButtons.forEach((b) => b.classList.toggle("on", Number(b.dataset.side) === current));
   };
 
   links.forEach((a, i) =>
@@ -80,14 +108,24 @@ const jsonLd = {
       dialog.showModal();
     }),
   );
+  sideButtons.forEach((b) => b.addEventListener("click", () => show(Number(b.dataset.side))));
   dialog.querySelector(".close")!.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => setZoom(false));
   // A click on the backdrop (outside the photo) closes it.
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight") show(current + 1);
     if (e.key === "ArrowLeft") show(current - 1);
   });
-  big.addEventListener("click", () => links.length > 1 && show(current + 1));
+
+  big.addEventListener("click", (e) => {
+    if (!zoomed) focusPoint(e);
+    setZoom(!zoomed);
+  });
+  // Mouse: follows the pointer. Touch: follows a drag.
+  big.addEventListener("pointermove", (e) => {
+    if (zoomed && (e.pointerType === "mouse" || e.buttons)) focusPoint(e);
+  });
 </script>
 
 <style>
@@ -102,13 +140,21 @@ const jsonLd = {
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 20px; }
   dt { color: var(--muted); }
   dd { margin: 0; }
-  button { width: 100%; padding: 12px; font-size: 1rem; border: 0; border-radius: 6px;
-           background: var(--accent); color: var(--accent-text); opacity: .5; cursor: not-allowed; }
+  .buy { width: 100%; padding: 12px; font-size: 1rem; border: 0; border-radius: 6px;
+         background: var(--accent); color: var(--accent-text); opacity: .5; cursor: not-allowed; }
   .note { color: var(--muted); font-size: .85rem; margin-top: 12px; }
   .photos a { cursor: zoom-in; }
   dialog { padding: 0; border: 0; background: transparent; max-width: 96vw; max-height: 96vh; overflow: visible; }
   dialog::backdrop { background: rgba(0, 0, 0, .85); }
-  dialog img { display: block; max-width: 96vw; max-height: 92vh; width: auto; height: auto; border-radius: 6px; cursor: pointer; }
+  .frame { overflow: hidden; border-radius: 6px; }
+  dialog img { display: block; max-width: 96vw; max-height: 86vh; width: auto; height: auto;
+               cursor: zoom-in; transition: transform .15s ease-out; touch-action: none; }
+  dialog img.zoomed { transform: scale(2.5); cursor: zoom-out; }  /* zoom level */
+  .sides { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; }
+  .sides button { padding: 6px 16px; border: 1px solid #888; border-radius: 999px; background: transparent;
+                  color: #eee; font-size: .9rem; cursor: pointer; }
+  .sides button.on { background: #fff; color: #111; border-color: #fff; }
+  .hint { color: #aaa; font-size: .8rem; margin-left: 8px; }
   .close { position: absolute; top: -14px; right: -14px; width: 36px; height: 36px; border-radius: 50%;
-           border: 0; padding: 0; background: #fff; color: #111; font-size: 1.4rem; line-height: 1; cursor: pointer; opacity: 1; }
+           border: 0; padding: 0; background: #fff; color: #111; font-size: 1.4rem; line-height: 1; cursor: pointer; z-index: 1; }
 </style>
