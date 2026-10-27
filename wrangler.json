@@ -1,7 +1,9 @@
 {
   "name": "csusportscards",
   "compatibility_date": "2025-04-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "main": "./dist/_worker.js/index.js",
   "assets": {
     "directory": "./dist",
@@ -9,5 +11,15 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "routes": [
+    {
+      "pattern": "csusportscards.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.csusportscards.com",
+      "custom_domain": true
+    }
+  ]
 }
