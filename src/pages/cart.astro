@@ -130,7 +130,9 @@ const catalog = allCards.map((c) => ({
   if (getCart().length) startPayPal();
 </script>
 
-<style>
+<style is:global>
+  /* Global (this page only): the cart rows are created by the script, so
+     Astro's scoped styles wouldn't reach them. */
   h1 { margin: 0 0 16px; }
   .muted { color: var(--muted); }
   .ok { font-size: 1.2rem; font-weight: 600; }
