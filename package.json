@@ -1,0 +1,21 @@
+{
+  "name": "csusportscards-site",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro build && wrangler dev",
+    "check": "astro build && wrangler deploy --dry-run",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "12.5.0",
+    "@astrojs/sitemap": "3.3.0",
+    "astro": "5.7.4"
+  },
+  "devDependencies": {
+    "wrangler": "4.16.1"
+  }
+}
