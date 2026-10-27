@@ -3,6 +3,9 @@ import Base from "../layouts/Base.astro";
 import { allCards, price, heading } from "../lib/cards";
 
 const sports = [...new Set(allCards.map((c) => c.sport))].sort();
+// Everything a buyer might type, lowercased once at build time.
+const haystack = (c: (typeof allCards)[number]) =>
+  [c.player, c.number, `#${c.number}`, c.year, c.set, c.sport, c.team, c.condition].join(" ").toLowerCase();
 ---
 <Base
   title="CSU Sports Cards — raw baseball, basketball and football singles"
@@ -11,12 +14,17 @@ const sports = [...new Set(allCards.map((c) => c.sport))].sort();
   <h1>Cards for sale</h1>
   <p class="lede">{allCards.length} cards · every photo is the actual card.</p>
 
+  <form class="search" role="search" onsubmit="return false">
+    <input id="q" type="search" placeholder="Search player, team, set, year or card #" aria-label="Search cards" autocomplete="off" />
+    <span id="count" aria-live="polite"></span>
+  </form>
+
   {sports.map((sport) => (
-    <section>
+    <section data-sport>
       <h2>{sport}</h2>
       <ul class="grid">
         {allCards.filter((c) => c.sport === sport).map((c) => (
-          <li>
+          <li data-search={haystack(c)}>
             <a href={`/cards/${c.slug}/`}>
               <img src={c.front_sm} alt={`${heading(c)} front`} width="360" height="500" loading="lazy" />
               <span class="name">{c.player} #{c.number}</span>
@@ -28,11 +36,49 @@ const sports = [...new Set(allCards.map((c) => c.sport))].sort();
       </ul>
     </section>
   ))}
+  <p id="none" hidden>No cards match that search.</p>
 </Base>
+
+<script>
+  // Filters the grid in place. Every word typed must match (so "jazz 1997"
+  // narrows instead of widening). The query is kept in ?q= so a search can
+  // be bookmarked or shared.
+  const input = document.getElementById("q") as HTMLInputElement;
+  const count = document.getElementById("count")!;
+  const none = document.getElementById("none")!;
+  const items = [...document.querySelectorAll<HTMLLIElement>("li[data-search]")];
+  const sections = [...document.querySelectorAll<HTMLElement>("section[data-sport]")];
+
+  const apply = () => {
+    const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of items) {
+      const hit = words.every((w) => li.dataset.search!.includes(w));
+      li.hidden = !hit;
+      if (hit) shown++;
+    }
+    for (const s of sections) s.hidden = !s.querySelector("li:not([hidden])");
+    none.hidden = shown > 0;
+    count.textContent = words.length ? `${shown} of ${items.length}` : "";
+    const url = new URL(location.href);
+    words.length ? url.searchParams.set("q", input.value.trim()) : url.searchParams.delete("q");
+    history.replaceState(null, "", url);
+  };
+
+  input.value = new URLSearchParams(location.search).get("q") ?? "";
+  input.addEventListener("input", apply);
+  apply();
+</script>
 
 <style>
   h1 { margin: 0 0 4px; }
-  .lede { color: var(--muted); margin: 0 0 24px; }
+  .lede { color: var(--muted); margin: 0 0 16px; }
+  .search { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+  .search input { flex: 1; max-width: 480px; padding: 10px 12px; font-size: 1rem; color: var(--text);
+                  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+  .search input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #count { color: var(--muted); font-size: .9rem; }
+  #none { color: var(--muted); margin-top: 24px; }
   h2 { font-size: 1.1rem; margin: 24px 0 12px; }
   .grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px;
           grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
