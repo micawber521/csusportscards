@@ -27,7 +27,7 @@ const catalog = allCards.map((c) => ({
         <dt class="total">Total</dt><dd class="total" id="total"></dd>
       </dl>
       <p id="msg" class="warn" hidden></p>
-      <div id="paypal"></div>
+      <div id="pay-buttons"></div>
     </div>
   </div>
 
@@ -35,6 +35,8 @@ const catalog = allCards.map((c) => ({
 </Base>
 
 <script>
+  // Note: the button container must NOT have id="paypal" — browsers expose
+  // element ids as window globals, which clobbers the SDK's window.paypal.
   import { getCart, setCart } from "../lib/cart";
 
   type Line = { id: number; slug: string; name: string; condition: string; price_cents: number; img: string };
@@ -75,7 +77,7 @@ const catalog = allCards.map((c) => ({
 
     const tooMany = lines.length > maxCards;
     say(tooMany ? `Orders are limited to ${maxCards} cards for now — please remove ${lines.length - maxCards}.` : "");
-    $("paypal").hidden = tooMany;
+    $("pay-buttons").hidden = tooMany;
   }
 
   async function startPayPal() {
@@ -118,8 +120,9 @@ const catalog = allCards.map((c) => ({
           $("done").hidden = false;
         },
         onError: () => say("PayPal had a problem. You have not been charged — please try again."),
-      }).render("#paypal");
+      }).render("#pay-buttons");
     };
+    sdk.onerror = () => say("Couldn't load PayPal. Check your connection or ad blocker, then refresh.");
     document.head.append(sdk);
   }
 
