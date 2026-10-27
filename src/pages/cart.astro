@@ -1,0 +1,151 @@
+---
+import Base from "../layouts/Base.astro";
+import { allCards, heading } from "../lib/cards";
+
+// Just enough to draw cart lines in the browser. Checkout reprices on the
+// server, so nothing here is trusted for money.
+const catalog = allCards.map((c) => ({
+  id: c.id, slug: c.slug, name: heading(c), condition: c.condition, price_cents: c.price_cents, img: c.front_sm,
+}));
+---
+<Base title="Cart | CSU Sports Cards" description="Your cart at CSU Sports Cards.">
+  <h1>Cart</h1>
+
+  <div id="done" hidden>
+    <p class="ok">Thanks — your order is paid. A receipt is on its way from PayPal.</p>
+    <p class="muted">Order <span id="order-id"></span></p>
+    <p><a href="/">Keep browsing</a></p>
+  </div>
+
+  <div id="cart">
+    <p id="empty" class="muted" hidden>Your cart is empty. <a href="/">Browse cards</a></p>
+    <ul id="lines"></ul>
+    <div id="totals" hidden>
+      <dl>
+        <dt>Cards</dt><dd id="items"></dd>
+        <dt>Shipping</dt><dd id="ship"></dd>
+        <dt class="total">Total</dt><dd class="total" id="total"></dd>
+      </dl>
+      <p id="msg" class="warn" hidden></p>
+      <div id="paypal"></div>
+    </div>
+  </div>
+
+  <script id="catalog" type="application/json" set:html={JSON.stringify(catalog)} />
+</Base>
+
+<script>
+  import { getCart, setCart } from "../lib/cart";
+
+  type Line = { id: number; slug: string; name: string; condition: string; price_cents: number; img: string };
+  const catalog: Line[] = JSON.parse(document.getElementById("catalog")!.textContent!);
+  const byId = new Map(catalog.map((c) => [c.id, c]));
+  const $ = (id: string) => document.getElementById(id)!;
+  const dollars = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const shipping = (n: number) => (n > 0 ? 125 + 50 * (n - 1) : 0); // matches src/lib/cards.ts
+  let maxCards = 6;
+
+  const say = (text: string) => { $("msg").textContent = text; $("msg").hidden = !text; };
+
+  function render() {
+    // Drop anything no longer in the catalog (sold and rebuilt since it was added).
+    const ids = getCart().filter((id) => byId.has(id));
+    setCart(ids);
+    const lines = ids.map((id) => byId.get(id)!);
+
+    $("empty").hidden = lines.length > 0;
+    $("totals").hidden = lines.length === 0;
+    $("lines").innerHTML = "";
+    for (const c of lines) {
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="/cards/${c.slug}/"><img src="${c.img}" alt="" width="72" height="100"></a>
+        <div><a href="/cards/${c.slug}/">${c.name}</a><span class="muted">${c.condition}</span></div>
+        <strong>${dollars(c.price_cents)}</strong>
+        <button type="button" class="remove" aria-label="Remove">Remove</button>`;
+      li.querySelector(".remove")!.addEventListener("click", () => {
+        setCart(getCart().filter((x) => x !== c.id));
+        render();
+      });
+      $("lines").append(li);
+    }
+    const items = lines.reduce((s, c) => s + c.price_cents, 0);
+    $("items").textContent = dollars(items);
+    $("ship").textContent = dollars(shipping(lines.length));
+    $("total").textContent = dollars(items + shipping(lines.length));
+
+    const tooMany = lines.length > maxCards;
+    say(tooMany ? `Orders are limited to ${maxCards} cards for now — please remove ${lines.length - maxCards}.` : "");
+    $("paypal").hidden = tooMany;
+  }
+
+  async function startPayPal() {
+    const cfg = await fetch("/api/config").then((r) => r.json());
+    maxCards = cfg.maxCards ?? maxCards;
+    render();
+    if (!cfg.clientId) { say("Checkout isn't configured yet."); return; }
+
+    const sdk = document.createElement("script");
+    sdk.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(cfg.clientId)}&currency=USD&intent=capture`;
+    sdk.onload = () => {
+      (window as any).paypal.Buttons({
+        style: { layout: "vertical", label: "pay" },
+        createOrder: async () => {
+          say("");
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: getCart() }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            if (data.sold) { setCart(getCart().filter((id) => !data.sold.includes(id))); render(); }
+            say(data.error ?? "Couldn't start checkout.");
+            throw new Error(data.error);
+          }
+          return data.id;
+        },
+        onApprove: async ({ orderID }: { orderID: string }) => {
+          const res = await fetch(`/api/orders/${encodeURIComponent(orderID)}/capture`, { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) {
+            if (data.sold) { setCart(getCart().filter((id) => !data.sold.includes(id))); render(); }
+            say(data.error ?? "Payment didn't go through.");
+            return;
+          }
+          setCart([]);
+          $("order-id").textContent = data.order_id;
+          $("cart").hidden = true;
+          $("done").hidden = false;
+        },
+        onError: () => say("PayPal had a problem. You have not been charged — please try again."),
+      }).render("#paypal");
+    };
+    document.head.append(sdk);
+  }
+
+  render();
+  if (getCart().length) startPayPal();
+</script>
+
+<style>
+  h1 { margin: 0 0 16px; }
+  .muted { color: var(--muted); }
+  .ok { font-size: 1.2rem; font-weight: 600; }
+  .warn { color: #b3261e; }
+  #lines { list-style: none; padding: 0; margin: 0 0 24px; max-width: 720px; }
+  #lines li { display: grid; grid-template-columns: 72px 1fr auto auto; gap: 16px; align-items: center;
+              padding: 12px 0; border-bottom: 1px solid var(--line); }
+  #lines img { width: 72px; height: auto; border-radius: 4px; display: block; }
+  #lines div { display: flex; flex-direction: column; }
+  #lines div a { color: var(--text); text-decoration: none; font-weight: 600; }
+  .remove { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: .9rem; padding: 4px; }
+  #totals { max-width: 400px; }
+  dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 0 0 20px; }
+  dd { margin: 0; text-align: right; }
+  .total { font-weight: 700; font-size: 1.1rem; }
+  @media (max-width: 520px) {
+    #lines li { grid-template-columns: 56px 1fr auto; }
+    #lines img { width: 56px; }
+    .remove { grid-column: 2; justify-self: start; padding: 0; }
+  }
+</style>

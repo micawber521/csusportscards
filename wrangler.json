@@ -21,5 +21,8 @@
       "pattern": "www.csusportscards.com",
       "custom_domain": true
     }
-  ]
+  ],
+  "vars": {
+    "PAYPAL_ENV": "sandbox"
+  }
 }

@@ -44,7 +44,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       header { border-bottom: 1px solid var(--line); background: var(--surface); }
       header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
       .brand { font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--text); letter-spacing: .02em; }
-      .tag { color: var(--muted); font-size: .9rem; }
+      .tag { color: var(--muted); font-size: .9rem; margin-left: auto; margin-right: 20px; }
+      @media (max-width: 600px) { .tag { display: none; } }
+      .cart-link { font-weight: 600; text-decoration: none; }
       .banner { background: var(--banner); text-align: center; font-size: .9rem; padding: 8px 16px; }
       main { padding: 24px 0 48px; }
       footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; padding: 20px 0 32px; }
@@ -55,12 +57,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <div class="wrap">
         <a class="brand" href="/">CSU Sports Cards</a>
         <span class="tag">Raw singles · combined shipping</span>
+        <a class="cart-link" href="/cart/">Cart (<span id="cart-count">0</span>)</a>
       </div>
     </header>
-    {PREVIEW && <div class="banner">Store opening soon — checkout isn't live yet.</div>}
+    {PREVIEW && <div class="banner">Test mode — checkout uses PayPal's sandbox, so no real payments are taken.</div>}
     <main class="wrap"><slot /></main>
     <footer>
       <div class="wrap">Shipping: $1.25 per order, plus $0.50 for each additional card. Every card pictured is the exact card you get.</div>
     </footer>
+    <script>
+      import { cartCount } from "../lib/cart";
+      cartCount();
+    </script>
   </body>
 </html>

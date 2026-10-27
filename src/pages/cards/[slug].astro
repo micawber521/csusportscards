@@ -48,7 +48,8 @@ const jsonLd = {
         <dt>Type</dt><dd>Raw (ungraded)</dd>
         <dt>Item #</dt><dd>CSU-{card.id}</dd>
       </dl>
-      <button class="buy" disabled>Checkout coming soon</button>
+      <button class="buy" id="add" data-id={card.id}>Add to cart</button>
+      <a class="view-cart" href="/cart/" hidden>View cart →</a>
       <p class="note">The scans are the exact card you'll receive. $1.25 shipping per order, plus $0.50 for each additional card.</p>
     </div>
   </div>
@@ -65,6 +66,25 @@ const jsonLd = {
 </Base>
 
 <script>
+  import { getCart, setCart } from "../../lib/cart";
+
+  // Add to cart: toggles the card in/out of the browser cart.
+  const add = document.getElementById("add") as HTMLButtonElement;
+  const viewCart = document.querySelector(".view-cart") as HTMLAnchorElement;
+  const cardId = Number(add.dataset.id);
+  const paint = () => {
+    const inCart = getCart().includes(cardId);
+    add.textContent = inCart ? "In cart — remove" : "Add to cart";
+    add.classList.toggle("in", inCart);
+    viewCart.hidden = !inCart;
+  };
+  add.addEventListener("click", () => {
+    const cart = getCart();
+    setCart(cart.includes(cardId) ? cart.filter((id) => id !== cardId) : [...cart, cardId]);
+    paint();
+  });
+  paint();
+
   // Photo viewer: opens on the same page instead of navigating to the image.
   // The links keep their href so the photo still opens if JavaScript is off.
   // Click the photo to zoom in at that spot; move the mouse (or drag on a
@@ -141,7 +161,9 @@ const jsonLd = {
   dt { color: var(--muted); }
   dd { margin: 0; }
   .buy { width: 100%; padding: 12px; font-size: 1rem; border: 0; border-radius: 6px;
-         background: var(--accent); color: var(--accent-text); opacity: .5; cursor: not-allowed; }
+         background: var(--accent); color: var(--accent-text); cursor: pointer; }
+  .buy.in { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .view-cart { display: block; text-align: center; margin-top: 8px; }
   .note { color: var(--muted); font-size: .85rem; margin-top: 12px; }
   .photos a { cursor: zoom-in; }
   dialog { padding: 0; border: 0; background: transparent; max-width: 96vw; max-height: 96vh; overflow: visible; }

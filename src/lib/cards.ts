@@ -25,3 +25,9 @@ export const allCards = cards as Card[];
 export const price = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
 export const heading = (c: Card) => `${c.year} ${c.set} ${c.player} #${c.number}`;
+
+// Same envelope rates as the eBay listings (LISTING_TEMPLATE.md): $1.25 for
+// the first card, $0.50 for each additional card.
+export const shippingCents = (count: number) => (count > 0 ? 125 + 50 * (count - 1) : 0);
+
+export const byId = new Map(allCards.map((c) => [c.id, c]));
