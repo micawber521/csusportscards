@@ -1,0 +1,72 @@
+---
+import Base from "../../layouts/Base.astro";
+import { allCards, price, heading, type Card } from "../../lib/cards";
+
+export function getStaticPaths() {
+  return allCards.map((card) => ({ params: { slug: card.slug }, props: { card } }));
+}
+
+const { card } = Astro.props as { card: Card };
+const name = heading(card);
+const description = `${name}${card.team ? ` (${card.team})` : ""}. Raw, ${card.condition.toLowerCase()} condition. ${price(card.price_cents)} with combined shipping.`;
+
+// Product structured data so search results can show the price and stock.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name,
+  image: [new URL(card.front, Astro.site).href, ...(card.back ? [new URL(card.back, Astro.site).href] : [])],
+  description,
+  sku: `CSU-${card.id}`,
+  offers: {
+    "@type": "Offer",
+    price: (card.price_cents / 100).toFixed(2),
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+    itemCondition: "https://schema.org/UsedCondition",
+    url: new URL(`/cards/${card.slug}/`, Astro.site).href,
+  },
+};
+---
+<Base title={`${name} | CSU Sports Cards`} description={description} image={card.front}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  <p class="crumb"><a href="/">All cards</a> · {card.sport}</p>
+  <div class="card">
+    <div class="photos">
+      <a href={card.front}><img src={card.front} alt={`${name} front`} width="800" height="1110" /></a>
+      {card.back && <a href={card.back}><img src={card.back} alt={`${name} back`} width="800" height="1110" loading="lazy" /></a>}
+    </div>
+    <div class="info">
+      <h1>{card.player} #{card.number}</h1>
+      <p class="set">{card.year} {card.set}</p>
+      <p class="price">{price(card.price_cents)}</p>
+      <dl>
+        <dt>Condition</dt><dd>{card.condition}</dd>
+        {card.team && <><dt>Team</dt><dd>{card.team}</dd></>}
+        <dt>Sport</dt><dd>{card.sport}</dd>
+        <dt>Type</dt><dd>Raw (ungraded)</dd>
+        <dt>Item #</dt><dd>CSU-{card.id}</dd>
+      </dl>
+      <button disabled>Checkout coming soon</button>
+      <p class="note">The scans are the exact card you'll receive. $1.25 shipping per order, plus $0.50 for each additional card.</p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .crumb { color: var(--muted); font-size: .9rem; margin: 0 0 16px; }
+  .card { display: grid; gap: 32px; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 760px) { .card { grid-template-columns: 1fr; } }
+  .photos { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  .photos img { width: 100%; height: auto; border-radius: 6px; background: var(--surface); }
+  h1 { margin: 0; font-size: 1.6rem; }
+  .set { color: var(--muted); margin: 4px 0 12px; }
+  .price { font-size: 1.8rem; font-weight: 700; margin: 0 0 16px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 20px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  button { width: 100%; padding: 12px; font-size: 1rem; border: 0; border-radius: 6px;
+           background: var(--accent); color: var(--accent-text); opacity: .5; cursor: not-allowed; }
+  .note { color: var(--muted); font-size: .85rem; margin-top: 12px; }
+</style>

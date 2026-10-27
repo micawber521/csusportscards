@@ -1,24 +1,49 @@
 ---
-const title = "CSU Sports Cards";
+import Base from "../layouts/Base.astro";
+import { allCards, price, heading } from "../lib/cards";
+
+const sports = [...new Set(allCards.map((c) => c.sport))].sort();
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content="Raw sports cards — baseball, basketball, football. Combined shipping." />
-    <style>
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center;
-             font-family: system-ui, sans-serif; background: #111; color: #eee; text-align: center; padding: 16px; }
-      h1 { font-size: clamp(2rem, 6vw, 3.5rem); margin: 0 0 .5rem; }
-      p { color: #aaa; margin: 0; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>{title}</h1>
-      <p>Coming soon.</p>
-    </main>
-  </body>
-</html>
+<Base
+  title="CSU Sports Cards — raw baseball, basketball and football singles"
+  description="Raw sports card singles with real front and back scans. Combined shipping on every order."
+>
+  <h1>Cards for sale</h1>
+  <p class="lede">{allCards.length} cards · every photo is the actual card.</p>
+
+  {sports.map((sport) => (
+    <section>
+      <h2>{sport}</h2>
+      <ul class="grid">
+        {allCards.filter((c) => c.sport === sport).map((c) => (
+          <li>
+            <a href={`/cards/${c.slug}/`}>
+              <img src={c.front_sm} alt={`${heading(c)} front`} width="360" height="500" loading="lazy" />
+              <span class="name">{c.player} #{c.number}</span>
+              <span class="set">{c.year} {c.set}</span>
+              <span class="row"><span>{c.condition}</span><strong>{price(c.price_cents)}</strong></span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Base>
+
+<style>
+  h1 { margin: 0 0 4px; }
+  .lede { color: var(--muted); margin: 0 0 24px; }
+  h2 { font-size: 1.1rem; margin: 24px 0 12px; }
+  .grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px;
+          grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  .grid a { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 10px;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+            text-decoration: none; color: var(--text); }
+  .grid a:hover { border-color: var(--accent); }
+  .grid img { width: 100%; height: auto; aspect-ratio: 360 / 500; object-fit: contain; margin-bottom: 6px; }
+  .name { font-weight: 600; }
+  .set { color: var(--muted); font-size: .85rem; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; margin-top: auto;
+         padding-top: 6px; font-size: .85rem; color: var(--muted); }
+  .row strong { color: var(--text); font-size: 1rem; }
+</style>

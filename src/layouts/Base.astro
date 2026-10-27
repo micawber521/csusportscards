@@ -1,0 +1,66 @@
+---
+// Shared shell for every page. PREVIEW stays true until launch (Phase 3): it
+// shows the "checkout not live" banner and keeps search engines out, so nobody
+// lands on a card they can't buy yet.
+export const PREVIEW = true;
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+const { title, description, image } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {PREVIEW && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+    <slot name="head" />
+    <style is:global>
+      :root {
+        --bg: #f6f5f2; --surface: #ffffff; --text: #1b1b1b; --muted: #666;
+        --line: #e2e0da; --accent: #1f4e8c; --accent-text: #ffffff; --banner: #fff4d6;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121314; --surface: #1c1d1f; --text: #ececec; --muted: #9a9a9a;
+          --line: #2d2e31; --accent: #6ea0e6; --accent-text: #0d1420; --banner: #3a3220;
+        }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text);
+             font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+      a { color: var(--accent); }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+      header { border-bottom: 1px solid var(--line); background: var(--surface); }
+      header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+      .brand { font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--text); letter-spacing: .02em; }
+      .tag { color: var(--muted); font-size: .9rem; }
+      .banner { background: var(--banner); text-align: center; font-size: .9rem; padding: 8px 16px; }
+      main { padding: 24px 0 48px; }
+      footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; padding: 20px 0 32px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <a class="brand" href="/">CSU Sports Cards</a>
+        <span class="tag">Raw singles · combined shipping</span>
+      </div>
+    </header>
+    {PREVIEW && <div class="banner">Store opening soon — checkout isn't live yet.</div>}
+    <main class="wrap"><slot /></main>
+    <footer>
+      <div class="wrap">Shipping: $1.25 per order, plus $0.50 for each additional card. Every card pictured is the exact card you get.</div>
+    </footer>
+  </body>
+</html>
