@@ -24,6 +24,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brand/icon-16.png" />
+    <link rel="apple-touch-icon" href="/brand/icon-180.png" />
     <slot name="head" />
     <style is:global>
       :root {
@@ -43,7 +46,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
       header { border-bottom: 1px solid var(--line); background: var(--surface); }
       header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
-      .brand { font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--text); letter-spacing: .02em; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; text-decoration: none; color: var(--text); letter-spacing: .02em; }
+      /* logo has a baked-in white background, so it sits on a white tile in dark mode */
+      .brand img { height: 46px; width: auto; border-radius: 6px; background: #fff; padding: 2px; }
       .tag { color: var(--muted); font-size: .9rem; margin-left: auto; margin-right: 20px; }
       @media (max-width: 600px) { .tag { display: none; } }
       .cart-link { font-weight: 600; text-decoration: none; }
@@ -55,7 +60,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <body>
     <header>
       <div class="wrap">
-        <a class="brand" href="/">CSU Sports Cards</a>
+        <a class="brand" href="/"><img src="/brand/logo.png" alt="" width="227" height="235" />CSU Sports Cards</a>
         <span class="tag">Raw singles · combined shipping</span>
         <a class="cart-link" href="/cart/">Cart (<span id="cart-count">0</span>)</a>
       </div>
