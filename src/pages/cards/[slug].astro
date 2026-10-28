@@ -142,8 +142,10 @@ const jsonLd = {
     if (!zoomed) focusPoint(e);
     setZoom(!zoomed);
   });
-  // Mouse: follows the pointer. Touch: follows a drag.
-  big.addEventListener("pointermove", (e) => {
+  // Mouse: follows the pointer. Touch: follows a drag. Listening on the
+  // dialog (which includes the backdrop) lets the pointer run past the photo
+  // into the margin; focusPoint clamps, so corners and edges stay reachable.
+  dialog.addEventListener("pointermove", (e) => {
     if (zoomed && (e.pointerType === "mouse" || e.buttons)) focusPoint(e);
   });
 </script>
@@ -169,7 +171,7 @@ const jsonLd = {
   dialog { padding: 0; border: 0; background: transparent; max-width: 96vw; max-height: 96vh; overflow: visible; }
   dialog::backdrop { background: rgba(0, 0, 0, .85); }
   .frame { overflow: hidden; border-radius: 6px; }
-  dialog img { display: block; max-width: 96vw; max-height: 86vh; width: auto; height: auto;
+  dialog img { display: block; max-width: 84vw; max-height: 74vh; width: auto; height: auto;
                cursor: zoom-in; transition: transform .15s ease-out; touch-action: none; }
   dialog img.zoomed { transform: scale(2.5); cursor: zoom-out; }  /* zoom level */
   .sides { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; }
