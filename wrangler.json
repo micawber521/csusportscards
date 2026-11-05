@@ -23,7 +23,8 @@
     }
   ],
   "vars": {
-    "PAYPAL_ENV": "sandbox"
+    "PAYPAL_ENV": "sandbox",
+    "MO_TAX_RATE": "7.725"
   },
   "kv_namespaces": [
     {

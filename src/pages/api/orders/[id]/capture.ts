@@ -5,7 +5,7 @@
 import type { APIRoute } from "astro";
 import { paypal } from "../../../../lib/paypal";
 import { byId } from "../../../../lib/cards";
-import { envOf, json, soldIds } from "../../../../lib/store";
+import { envOf, itemTaxes, json, soldIds } from "../../../../lib/store";
 import { shipPlan } from "../../../../lib/ship";
 import { createTcgOrder } from "../../../../lib/tcg";
 
@@ -23,6 +23,17 @@ export const POST: APIRoute = async ({ params, locals }) => {
   const unit = order.data.purchase_units?.[0];
   const ids = String(unit?.custom_id ?? "").split(",").map(Number).filter((n) => byId.has(n));
   if (!ids.length) return json({ error: "Order has no cards." }, 400);
+
+  // Tax check: the tax on the order must match the ship-to PayPal actually has
+  // (guards against a buyer faking the state sent to /shipping).
+  const shipState = unit?.shipping?.address?.admin_area_1;
+  const taxes = itemTaxes(env, ids.map((id) => byId.get(id)!), shipState);
+  const expectedTax = taxes.reduce((a, b) => a + b, 0);
+  const orderTax = unit?.amount?.breakdown?.tax_total ? cents(unit.amount.breakdown.tax_total.value) : 0;
+  if (orderTax !== expectedTax) {
+    console.error("tax mismatch", orderId, shipState, orderTax, expectedTax);
+    return json({ error: "Your total needs updating for your shipping address. You have not been charged — please try again." }, 409);
+  }
 
   const sold = await soldIds(env, ids.map((id) => byId.get(id)!));
   if (sold.length) return json({ error: "Sorry — a card in your cart just sold. You have not been charged.", sold }, 409);
@@ -65,7 +76,8 @@ export const POST: APIRoute = async ({ params, locals }) => {
     capture_id: capture.id,
     env: env.PAYPAL_ENV ?? "sandbox",
     ids,
-    items: ids.map((id) => ({ id, price_cents: byId.get(id)!.price_cents, pack: byId.get(id)!.pack })),
+    items: ids.map((id, i) => ({ id, price_cents: byId.get(id)!.price_cents, tax_cents: taxes[i], pack: byId.get(id)!.pack })),
+    tax_cents: expectedTax,
     // How to ship it (src/lib/ship.ts). Gordon's poller puts this in the Telegram alert.
     ship: plan.ok
       ? { mailer: plan.mailer, carrier: plan.carrier, weight_g: plan.weight_g, postage_oz: plan.postage_oz, insure_cents: plan.insure_cents }

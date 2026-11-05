@@ -16,6 +16,7 @@ export interface Env extends PayPalEnv, TcgEnv {
   SMTP_USER?: string;      // also the From address
   SMTP_PASS?: string;      // Proton SMTP token (send-only)
   CONTACT_TO?: string;     // destination inbox
+  MO_TAX_RATE?: string;    // wrangler.json var, percent, e.g. "7.725" (Bertrand, MO)
 }
 
 export const envOf = (locals: App.Locals) => (locals as any).runtime.env as Env;
@@ -40,29 +41,52 @@ export async function soldIds(env: Env, cards: Card[]): Promise<number[]> {
   return cards.filter((_, i) => hits[i] !== null).map((c) => c.id);
 }
 
-export function orderBody(cards: Card[], shipCents: number) {
+// Missouri sales tax: charged only when the PayPal ship-to state is MO, at the
+// seller-location rate (MO in-state sales are origin-based). Computed per item
+// (PayPal requires tax_total = sum of item taxes) on card prices only; the
+// separately stated shipping charge is not taxed.
+export function itemTaxes(env: Env, cards: Card[], state: string | undefined): number[] {
+  const rate = Number(env.MO_TAX_RATE ?? 0);
+  if ((state ?? "").toUpperCase() !== "MO" || !(rate > 0)) return cards.map(() => 0);
+  return cards.map((c) => Math.round((c.price_cents * rate) / 100));
+}
+
+export function amountAndItems(cards: Card[], shipCents: number, taxes: number[]) {
   const itemCents = cards.reduce((sum, c) => sum + c.price_cents, 0);
+  const taxCents = taxes.reduce((a, b) => a + b, 0);
+  const usd = (cents: number) => ({ currency_code: "USD", value: money(cents) });
+  return {
+    amount: {
+      currency_code: "USD",
+      value: money(itemCents + shipCents + taxCents),
+      breakdown: {
+        item_total: usd(itemCents),
+        shipping: usd(shipCents),
+        ...(taxCents ? { tax_total: usd(taxCents) } : {}),
+      },
+    },
+    items: cards.map((c, i) => ({
+      name: heading(c).slice(0, 127),
+      sku: `CSU-${c.id}`,
+      unit_amount: usd(c.price_cents),
+      ...(taxCents ? { tax: usd(taxes[i]) } : {}),
+      quantity: "1",
+      category: "PHYSICAL_GOODS",
+    })),
+  };
+}
+
+export function orderBody(cards: Card[], shipCents: number) {
+  // Tax starts at 0; the cart's onShippingAddressChange adds it for MO buyers.
+  const { amount, items } = amountAndItems(cards, shipCents, cards.map(() => 0));
   return {
     intent: "CAPTURE",
     purchase_units: [{
       reference_id: "csu",
       custom_id: cards.map((c) => c.id).join(","),
       description: "CSU Sports Cards",
-      amount: {
-        currency_code: "USD",
-        value: money(itemCents + shipCents),
-        breakdown: {
-          item_total: { currency_code: "USD", value: money(itemCents) },
-          shipping: { currency_code: "USD", value: money(shipCents) },
-        },
-      },
-      items: cards.map((c) => ({
-        name: heading(c).slice(0, 127),
-        sku: `CSU-${c.id}`,
-        unit_amount: { currency_code: "USD", value: money(c.price_cents) },
-        quantity: "1",
-        category: "PHYSICAL_GOODS",
-      })),
+      amount,
+      items,
     }],
   };
 }

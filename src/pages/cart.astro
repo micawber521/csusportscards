@@ -26,6 +26,7 @@ const catalog = allCards.map((c) => ({
         <dt>Shipping</dt><dd id="ship"></dd>
         <dt class="total">Total</dt><dd class="total" id="total"></dd>
       </dl>
+      <p class="muted small">Missouri addresses: sales tax is added in PayPal once you pick your shipping address.</p>
       <p id="msg" class="warn" hidden></p>
       <div id="pay-buttons"></div>
     </div>
@@ -104,6 +105,17 @@ const catalog = allCards.map((c) => ({
           }
           return data.id;
         },
+        // Re-price for the buyer's ship-to (adds Missouri sales tax for MO).
+        onShippingAddressChange: async (data: any, actions: any) => {
+          const a = data.shippingAddress ?? {};
+          const res = await fetch(`/api/orders/${encodeURIComponent(data.orderID)}/shipping`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: a.state, country: a.countryCode }),
+          });
+          if (!res.ok) return actions.reject(a.countryCode && a.countryCode !== "US"
+            ? data.errors?.COUNTRY_ERROR : data.errors?.ADDRESS_ERROR);
+        },
         onApprove: async ({ orderID }: { orderID: string }) => {
           const res = await fetch(`/api/orders/${encodeURIComponent(orderID)}/capture`, { method: "POST" });
           const data = await res.json();
@@ -146,6 +158,7 @@ const catalog = allCards.map((c) => ({
   dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 0 0 20px; }
   dd { margin: 0; text-align: right; }
   .total { font-weight: 700; font-size: 1.1rem; }
+  .small { font-size: .85rem; margin: -10px 0 16px; }
   @media (max-width: 520px) {
     #lines li { grid-template-columns: 56px 1fr auto; }
     #lines img { width: 56px; }
