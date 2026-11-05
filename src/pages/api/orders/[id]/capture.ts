@@ -6,6 +6,7 @@ import type { APIRoute } from "astro";
 import { paypal } from "../../../../lib/paypal";
 import { byId } from "../../../../lib/cards";
 import { envOf, json, soldIds } from "../../../../lib/store";
+import { shipPlan } from "../../../../lib/ship";
 
 export const prerender = false;
 
@@ -36,12 +37,17 @@ export const POST: APIRoute = async ({ params, locals }) => {
 
   const shipTo = cap.data.purchase_units?.[0]?.shipping ?? unit?.shipping ?? {};
   const breakdown = unit?.amount?.breakdown ?? {};
+  const plan = shipPlan(ids.map((id) => byId.get(id)!));
   await env.SALES.put(`sale:${orderId}`, JSON.stringify({
     order_id: orderId,
     capture_id: capture.id,
     env: env.PAYPAL_ENV ?? "sandbox",
     ids,
-    items: ids.map((id) => ({ id, price_cents: byId.get(id)!.price_cents })),
+    items: ids.map((id) => ({ id, price_cents: byId.get(id)!.price_cents, pack: byId.get(id)!.pack })),
+    // How to ship it (src/lib/ship.ts). Gordon's poller puts this in the Telegram alert.
+    ship: plan.ok
+      ? { mailer: plan.mailer, carrier: plan.carrier, weight_g: plan.weight_g, postage_oz: plan.postage_oz, insure_cents: plan.insure_cents }
+      : { mailer: "unknown", error: plan.reason },
     shipping_cents: breakdown.shipping ? cents(breakdown.shipping.value) : 0,
     total_cents: cents(capture.amount.value),
     buyer: { name: shipTo.name?.full_name ?? "", email: cap.data.payer?.email_address ?? "" },

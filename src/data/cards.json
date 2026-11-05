@@ -14,7 +14,8 @@
     "front": "/cards/1995-hoops-number-crunchers-clyde-drexler-19-10-front.webp",
     "front_sm": "/cards/1995-hoops-number-crunchers-clyde-drexler-19-10-front-sm.webp",
     "back": "/cards/1995-hoops-number-crunchers-clyde-drexler-19-10-back.webp",
-    "back_sm": "/cards/1995-hoops-number-crunchers-clyde-drexler-19-10-back-sm.webp"
+    "back_sm": "/cards/1995-hoops-number-crunchers-clyde-drexler-19-10-back-sm.webp",
+    "pack": "sleeve"
   },
   {
     "id": 13,
@@ -31,7 +32,8 @@
     "front": "/cards/1997-skybox-z-force-john-stockton-12-13-front.webp",
     "front_sm": "/cards/1997-skybox-z-force-john-stockton-12-13-front-sm.webp",
     "back": "/cards/1997-skybox-z-force-john-stockton-12-13-back.webp",
-    "back_sm": "/cards/1997-skybox-z-force-john-stockton-12-13-back-sm.webp"
+    "back_sm": "/cards/1997-skybox-z-force-john-stockton-12-13-back-sm.webp",
+    "pack": "sleeve"
   },
   {
     "id": 14,
@@ -48,7 +50,8 @@
     "front": "/cards/1996-fleer-avery-johnson-99-14-front.webp",
     "front_sm": "/cards/1996-fleer-avery-johnson-99-14-front-sm.webp",
     "back": "/cards/1996-fleer-avery-johnson-99-14-back.webp",
-    "back_sm": "/cards/1996-fleer-avery-johnson-99-14-back-sm.webp"
+    "back_sm": "/cards/1996-fleer-avery-johnson-99-14-back-sm.webp",
+    "pack": "sleeve"
   },
   {
     "id": 86,
@@ -65,7 +68,8 @@
     "front": "/cards/1992-upper-deck-mcdonalds-kevin-mchale-p3-86-front.webp",
     "front_sm": "/cards/1992-upper-deck-mcdonalds-kevin-mchale-p3-86-front-sm.webp",
     "back": "/cards/1992-upper-deck-mcdonalds-kevin-mchale-p3-86-back.webp",
-    "back_sm": "/cards/1992-upper-deck-mcdonalds-kevin-mchale-p3-86-back-sm.webp"
+    "back_sm": "/cards/1992-upper-deck-mcdonalds-kevin-mchale-p3-86-back-sm.webp",
+    "pack": "sleeve"
   },
   {
     "id": 90,
@@ -82,6 +86,7 @@
     "front": "/cards/1996-skybox-usa-basketball-david-robinson-28-90-front.webp",
     "front_sm": "/cards/1996-skybox-usa-basketball-david-robinson-28-90-front-sm.webp",
     "back": "/cards/1996-skybox-usa-basketball-david-robinson-28-90-back.webp",
-    "back_sm": "/cards/1996-skybox-usa-basketball-david-robinson-28-90-back-sm.webp"
+    "back_sm": "/cards/1996-skybox-usa-basketball-david-robinson-28-90-back-sm.webp",
+    "pack": "sleeve"
   }
 ]

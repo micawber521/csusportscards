@@ -1,11 +1,10 @@
 // Server-side helpers shared by the /api routes. Runs in the Cloudflare
 // Worker; prices always come from the build's card data, never the browser.
-import { byId, shippingCents, heading, type Card } from "./cards";
+import { byId, heading, type Card } from "./cards";
+import { shipPlan, MAX_ITEMS, type ShipPlan } from "./ship";
 import { money, type PayPalEnv } from "./paypal";
 
-// One envelope holds up to 6 cards (LISTING_TEMPLATE.md). Bigger orders need
-// a different shipping method, which isn't priced yet.
-export const MAX_CARDS = 6;
+export { MAX_ITEMS };
 
 export interface Env extends PayPalEnv {
   SALES: KVNamespace;   // sold:<id> markers + sale:<orderId> records for Gordon
@@ -17,14 +16,16 @@ export const envOf = (locals: App.Locals) => (locals as any).runtime.env as Env;
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-// Validates a list of card ids from the browser. Returns the cards or an error.
-export function resolveCards(ids: unknown): { cards: Card[] } | { error: string } {
+// Validates a list of card ids from the browser and works out shipping.
+// Returns the cards + ship plan, or an error.
+export function resolveCards(ids: unknown): { cards: Card[]; ship: Extract<ShipPlan, { ok: true }> } | { error: string } {
   if (!Array.isArray(ids) || ids.length === 0) return { error: "Your cart is empty." };
   const unique = [...new Set(ids.map(Number))];
-  if (unique.length > MAX_CARDS) return { error: `Orders are limited to ${MAX_CARDS} cards for now.` };
   const cards = unique.map((id) => byId.get(id));
   if (cards.some((c) => !c)) return { error: "A card in your cart is no longer available." };
-  return { cards: cards as Card[] };
+  const ship = shipPlan(cards as Card[]);
+  if (!ship.ok) return { error: ship.reason };
+  return { cards: cards as Card[], ship };
 }
 
 export async function soldIds(env: Env, cards: Card[]): Promise<number[]> {
@@ -32,9 +33,8 @@ export async function soldIds(env: Env, cards: Card[]): Promise<number[]> {
   return cards.filter((_, i) => hits[i] !== null).map((c) => c.id);
 }
 
-export function orderBody(cards: Card[]) {
+export function orderBody(cards: Card[], shipCents: number) {
   const itemCents = cards.reduce((sum, c) => sum + c.price_cents, 0);
-  const shipCents = shippingCents(cards.length);
   return {
     intent: "CAPTURE",
     purchase_units: [{

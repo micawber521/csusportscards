@@ -5,7 +5,7 @@ import { allCards, heading } from "../lib/cards";
 // Just enough to draw cart lines in the browser. Checkout reprices on the
 // server, so nothing here is trusted for money.
 const catalog = allCards.map((c) => ({
-  id: c.id, slug: c.slug, name: heading(c), condition: c.condition, price_cents: c.price_cents, img: c.front_sm,
+  id: c.id, slug: c.slug, name: heading(c), condition: c.condition, price_cents: c.price_cents, img: c.front_sm, pack: c.pack,
 }));
 ---
 <Base title="Cart | CSU Sports Cards" description="Your cart at CSU Sports Cards.">
@@ -38,14 +38,13 @@ const catalog = allCards.map((c) => ({
   // Note: the button container must NOT have id="paypal" — browsers expose
   // element ids as window globals, which clobbers the SDK's window.paypal.
   import { getCart, setCart } from "../lib/cart";
+  import { shipPlan, type Pack } from "../lib/ship";
 
-  type Line = { id: number; slug: string; name: string; condition: string; price_cents: number; img: string };
+  type Line = { id: number; slug: string; name: string; condition: string; price_cents: number; img: string; pack: Pack };
   const catalog: Line[] = JSON.parse(document.getElementById("catalog")!.textContent!);
   const byId = new Map(catalog.map((c) => [c.id, c]));
   const $ = (id: string) => document.getElementById(id)!;
   const dollars = (c: number) => `$${(c / 100).toFixed(2)}`;
-  const shipping = (n: number) => (n > 0 ? 125 + 50 * (n - 1) : 0); // matches src/lib/cards.ts
-  let maxCards = 6;
 
   const say = (text: string) => { $("msg").textContent = text; $("msg").hidden = !text; };
 
@@ -72,18 +71,17 @@ const catalog = allCards.map((c) => ({
     }
     const items = lines.reduce((s, c) => s + c.price_cents, 0);
     $("items").textContent = dollars(items);
-    $("ship").textContent = dollars(shipping(lines.length));
-    $("total").textContent = dollars(items + shipping(lines.length));
-
-    const tooMany = lines.length > maxCards;
-    say(tooMany ? `Orders are limited to ${maxCards} cards for now — please remove ${lines.length - maxCards}.` : "");
-    $("pay-buttons").hidden = tooMany;
+    // Same rules checkout uses (src/lib/ship.ts); the server recomputes it anyway.
+    const plan = shipPlan(lines);
+    const ship = plan.ok ? plan.buyer_cents : 0;
+    $("ship").textContent = plan.ok ? `${dollars(ship)} (${plan.mailer === "envelope" ? "envelope" : "padded mailer"})` : "—";
+    $("total").textContent = dollars(items + ship);
+    if (lines.length) say(plan.ok ? "" : plan.reason);
+    $("pay-buttons").hidden = !plan.ok;
   }
 
   async function startPayPal() {
     const cfg = await fetch("/api/config").then((r) => r.json());
-    maxCards = cfg.maxCards ?? maxCards;
-    render();
     if (!cfg.clientId) { say("Checkout isn't configured yet."); return; }
 
     const sdk = document.createElement("script");

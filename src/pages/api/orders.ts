@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const sold = await soldIds(env, resolved.cards);
   if (sold.length) return json({ error: "Some cards in your cart just sold.", sold }, 409);
 
-  const res = await paypal(env, "POST", "/v2/checkout/orders", orderBody(resolved.cards));
+  const res = await paypal(env, "POST", "/v2/checkout/orders", orderBody(resolved.cards, resolved.ship.buyer_cents));
   if (!res.ok) {
     console.error("paypal create", res.status, JSON.stringify(res.data));
     return json({ error: "Couldn't start checkout. Please try again." }, 502);
