@@ -74,7 +74,7 @@ const catalog = allCards.map((c) => ({
     // Same rules checkout uses (src/lib/ship.ts); the server recomputes it anyway.
     const plan = shipPlan(lines);
     const ship = plan.ok ? plan.buyer_cents : 0;
-    $("ship").textContent = plan.ok ? `${dollars(ship)} (${plan.mailer === "envelope" ? "envelope" : "padded mailer"})` : "—";
+    $("ship").textContent = plan.ok ? `${dollars(ship)} (${({ envelope: "envelope", bubble: "padded mailer", box: "box" } as const)[plan.mailer]})` : "—";
     $("total").textContent = dollars(items + ship);
     if (lines.length) say(plan.ok ? "" : plan.reason);
     $("pay-buttons").hidden = !plan.ok;

@@ -12,6 +12,7 @@ export const GRAMS = {
   envelope: 5, slip: 5, strip: 6.7,          // manila strip: 1 per 6 cards, sleeve-only envelopes
   sleeve: 2.5, toploader: 9, slab: 50, pack: 28,
   bubble: 12, stiffeners: 25,                // stiffeners = front + back pair
+  box: 150,                                  // GUESS (box + packing), not weighed yet
 };
 const OZ = 28.3495;
 const MARGIN_G = 3;                          // stay this far under an ounce line (locked tiers)
@@ -23,13 +24,14 @@ const POINTS = { sleeve: 1, toploader: 6 };
 const ENV_MAX_TOPLOADERS = 3;
 const ENV_VALUE_LIMIT = 5000;                // < $50 card total; TCG Tracking insurance tops out at $50
 
-// Bubble mailer (Pirate Ship) limits.
+// Bubble mailer (Pirate Ship) limits. Past these the order goes in a box
+// (also Pirate Ship Ground Advantage, the next weight tier up).
 const BUBBLE_MAX_G = 453.6 - MARGIN_G;       // 1 lb mailer limit
 const BUBBLE_MAX_SLABS = 5;
 
 // Buyer prices (SHIPPING_PLAN.md §5).
 const ENV_FIRST = 125, ENV_EACH = 50, ENV_CAP = 600;
-const BUBBLE_FLAT = 899;
+const BUBBLE_FLAT = 899;                     // also charged for box orders until a box rate is set
 const EXTRA_SLAB_CENTS = 0;                  // proposed $1 per slab after the first, not yet approved
 
 // Order cap until box shipping is priced.
@@ -38,7 +40,7 @@ export const MAX_ITEMS = 40;
 export type ShipPlan =
   | {
       ok: true;
-      mailer: "envelope" | "bubble";
+      mailer: "envelope" | "bubble" | "box";
       carrier: "TCG Tracking" | "Pirate Ship";
       buyer_cents: number;
       weight_g: number;
@@ -85,14 +87,13 @@ export function shipPlan(items: ShipItem[]): ShipPlan {
     };
   }
 
-  const w = GRAMS.bubble + GRAMS.stiffeners + GRAMS.slip +
-    counts.sleeve * GRAMS.sleeve + counts.toploader * GRAMS.toploader +
+  const contents = counts.sleeve * GRAMS.sleeve + counts.toploader * GRAMS.toploader +
     counts.slab * GRAMS.slab + counts.pack * GRAMS.pack;
-  if (counts.slab > BUBBLE_MAX_SLABS || w > BUBBLE_MAX_G) {
-    return { ok: false, reason: "This order is too big for one mailer. Please split it into smaller orders, or contact us." };
-  }
+  const bubbleW = GRAMS.bubble + GRAMS.stiffeners + GRAMS.slip + contents;
+  const box = counts.slab > BUBBLE_MAX_SLABS || bubbleW > BUBBLE_MAX_G;
+  const w = box ? GRAMS.box + GRAMS.slip + contents : bubbleW;
   return {
-    ok: true, mailer: "bubble", carrier: "Pirate Ship",
+    ok: true, mailer: box ? "box" : "bubble", carrier: "Pirate Ship",
     buyer_cents: BUBBLE_FLAT + EXTRA_SLAB_CENTS * Math.max(0, counts.slab - 1),
     weight_g: Math.round(w * 10) / 10,
     postage_oz: Math.ceil(w / OZ),
