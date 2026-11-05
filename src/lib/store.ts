@@ -1,10 +1,9 @@
 // Server-side helpers shared by the /api routes. Runs in the Cloudflare
 // Worker; prices always come from the build's card data, never the browser.
 import { byId, heading, type Card } from "./cards";
-import { shipPlan, MAX_ITEMS, type ShipPlan } from "./ship";
+import { shipPlan, type ShipPlan } from "./ship";
 import { money, type PayPalEnv } from "./paypal";
 
-export { MAX_ITEMS };
 
 export interface Env extends PayPalEnv {
   SALES: KVNamespace;   // sold:<id> markers + sale:<orderId> records for Gordon

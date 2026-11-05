@@ -1,3 +1,5 @@
+import gaZone8 from "../data/ga_zone8.json";
+
 // Shipping rules for site orders: picks the mailer, the buyer's shipping
 // price, the postage weight and whether to insure. Pure functions with no
 // catalog import, so the cart page (browser) and checkout (server) share one
@@ -31,26 +33,18 @@ const BUBBLE_MAX_SLABS = 5;
 
 // Buyer prices (SHIPPING_PLAN.md §5).
 const ENV_FIRST = 125, ENV_EACH = 50, ENV_CAP = 600;
-const BUBBLE_FLAT = 899;
-
-// Box orders (over 1 lb): buyer pays the zone 8 (worst-case) USPS Ground
-// Advantage commercial rate for the weight, rounded up to the next $x.99.
-// The buyer's ZIP isn't known when the price is set, so zone 8 means we never
-// undercharge. Rates: entities/CardProAI/SHIPPING_RATES.md (USPS Notice 123,
-// pulled 2026-09-20; re-check after USPS rate changes).
-const GA_ZONE8_BY_LB: [number, number][] = [
-  [15.999 / 16, 840], [1, 1067], [2, 1287], [3, 1575], [4, 1801], [5, 1919], [6, 2068],
-  [7, 2183], [8, 2290], [9, 2409], [10, 2534], [11, 2737], [12, 2873],
-];
-const LB = 453.592;
-function boxCents(grams: number): number | null {
-  const row = GA_ZONE8_BY_LB.find(([lb]) => grams <= lb * LB);
-  return row ? Math.ceil((row[1] + 1) / 100) * 100 - 1 : null;
-}
+const BUBBLE_FLAT = 899;                     // zone 8 under 1 lb is $8.95 (2026-10-04 rates)
 const EXTRA_SLAB_CENTS = 0;                  // proposed $1 per slab after the first, not yet approved
 
-// Order cap until box shipping is priced.
-export const MAX_ITEMS = 40;
+// Box orders: buyer pays the zone 8 (worst-case) USPS Ground Advantage
+// commercial rate for the order's weight, rounded up to the next $x.99. The
+// buyer's ZIP isn't known when the price is set, so zone 8 means we never
+// undercharge. Full table (4 oz to 70 lb) in ../data/ga_zone8.json.
+const LB = 453.592;
+function boxCents(grams: number): number | null {
+  const row = (gaZone8.rows as [number, number][]).find(([lb]) => grams <= lb * LB);
+  return row ? Math.ceil((row[1] + 1) / 100) * 100 - 1 : null;
+}
 
 export type ShipPlan =
   | {
@@ -79,7 +73,6 @@ export function envelopeWeight(sleeves: number, toploaders: number): number {
 
 export function shipPlan(items: ShipItem[]): ShipPlan {
   if (items.length === 0) return { ok: false, reason: "Your cart is empty." };
-  if (items.length > MAX_ITEMS) return { ok: false, reason: `Orders are limited to ${MAX_ITEMS} items for now.` };
 
   const counts = tally(items);
   const value = items.reduce((s, i) => s + i.price_cents, 0);
@@ -109,7 +102,7 @@ export function shipPlan(items: ShipItem[]): ShipPlan {
   const w = box ? GRAMS.box + GRAMS.slip + contents : bubbleW;
   const boxPrice = box ? boxCents(w) : null;
   if (box && boxPrice === null) {
-    return { ok: false, reason: "This order is too big to ship as one package. Please split it, or contact us." };
+    return { ok: false, reason: "This order is over the 70 lb USPS limit for one package. Please split it, or contact us." };
   }
   return {
     ok: true, mailer: box ? "box" : "bubble", carrier: "Pirate Ship",
