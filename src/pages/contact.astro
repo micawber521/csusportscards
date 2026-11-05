@@ -1,0 +1,65 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="Contact | CSU Sports Cards" description="Questions about a card or an order? Send CSU Sports Cards a message.">
+  <h1>Contact us</h1>
+  <p class="lede">Questions about a card or an order? Send us a message and we'll reply by email.</p>
+
+  <form id="contact" novalidate>
+    <label>Name <input name="name" autocomplete="name" maxlength="100" required /></label>
+    <label>Email <input name="email" type="email" autocomplete="email" maxlength="200" required /></label>
+    <label>Order number <span class="muted">(optional)</span> <input name="order" maxlength="60" /></label>
+    <label>Message <textarea name="message" rows="7" maxlength="5000" required></textarea></label>
+    <!-- Honeypot for bots; hidden from people and screen readers. -->
+    <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+    <button type="submit">Send message</button>
+    <p id="msg" role="status" hidden></p>
+  </form>
+  <p id="sent" class="ok" hidden>Thanks, your message was sent. We'll get back to you by email.</p>
+</Base>
+
+<script>
+  const form = document.getElementById("contact") as HTMLFormElement;
+  const msg = document.getElementById("msg")!;
+  const button = form.querySelector("button")!;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.hidden = true;
+    button.disabled = true;
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Couldn't send your message. Please try again.");
+      form.hidden = true;
+      document.getElementById("sent")!.hidden = false;
+    } catch (err) {
+      msg.textContent = (err as Error).message;
+      msg.hidden = false;
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  h1 { margin: 0 0 4px; }
+  .lede { color: var(--muted); margin: 0 0 20px; }
+  .muted { color: var(--muted); font-weight: 400; }
+  form { display: grid; gap: 14px; max-width: 560px; }
+  label { display: grid; gap: 4px; font-weight: 600; }
+  input, textarea { padding: 10px 12px; font: inherit; font-weight: 400; color: var(--text);
+                    background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  textarea { resize: vertical; }
+  button { justify-self: start; padding: 10px 20px; font-size: 1rem; font-weight: 600; border: 0; border-radius: 6px;
+           background: var(--accent); color: var(--accent-text); cursor: pointer; }
+  button:disabled { opacity: .6; cursor: wait; }
+  #msg { color: #b3261e; margin: 0; }
+  .ok { font-size: 1.1rem; font-weight: 600; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+</style>

@@ -9,6 +9,11 @@ export { MAX_ITEMS };
 export interface Env extends PayPalEnv {
   SALES: KVNamespace;   // sold:<id> markers + sale:<orderId> records for Gordon
   SALES_TOKEN: string;  // shared with Gordon's poller (projects/csusportscards/poll_sales.py)
+  // Optional Secrets for emailing contact-form messages via Resend. Kept out of
+  // the (public) repo so the addresses can't be scraped.
+  RESEND_API_KEY?: string;
+  CONTACT_TO?: string;     // destination inbox
+  CONTACT_FROM?: string;   // verified Resend sender, e.g. "CSU Sports Cards <form@...>"
 }
 
 export const envOf = (locals: App.Locals) => (locals as any).runtime.env as Env;

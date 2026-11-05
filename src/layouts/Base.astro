@@ -52,6 +52,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       .tag { color: var(--muted); font-size: .9rem; margin-left: auto; margin-right: 20px; }
       @media (max-width: 600px) { .tag { display: none; } }
       .cart-link { font-weight: 600; text-decoration: none; }
+      .contact-link { text-decoration: none; margin-right: 18px; }
       .banner { background: var(--banner); text-align: center; font-size: .9rem; padding: 8px 16px; }
       main { padding: 24px 0 48px; }
       footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; padding: 20px 0 32px; }
@@ -62,13 +63,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <div class="wrap">
         <a class="brand" href="/"><img src="/brand/logo.png" alt="" width="227" height="235" />CSU Sports Cards</a>
         <span class="tag">Raw singles · combined shipping</span>
+        <a class="contact-link" href="/contact/">Contact</a>
         <a class="cart-link" href="/cart/">Cart (<span id="cart-count">0</span>)</a>
       </div>
     </header>
     {PREVIEW && <div class="banner">Test mode — checkout uses PayPal's sandbox, so no real payments are taken.</div>}
     <main class="wrap"><slot /></main>
     <footer>
-      <div class="wrap">Shipping: $1.25 for the first card plus $0.50 for each additional card, capped at $6.00. Larger orders ship in a padded mailer. Every card pictured is the exact card you get.</div>
+      <div class="wrap">Shipping: $1.25 for the first card plus $0.50 for each additional card, capped at $6.00. Larger orders ship in a padded mailer. Every card pictured is the exact card you get. · <a href="/contact/">Contact us</a></div>
     </footer>
     <script>
       import { cartCount } from "../lib/cart";
