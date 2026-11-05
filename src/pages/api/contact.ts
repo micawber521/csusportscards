@@ -1,11 +1,11 @@
 // Contact form handler. Every message is saved in KV (contact:<id>) for
-// Gordon's poller, which Telegrams it to Christian. If RESEND_API_KEY and
-// CONTACT_TO are set (Cloudflare Secrets), it's also emailed to that address
-// with the visitor's address as Reply-To. The destination address is never in
-// this repo (it's public) or in any page, so it can't be scraped. The domain's mail is on Proton, so Cloudflare
-// Email Routing can't be used for sending.
+// Gordon's poller, which Telegrams it to Christian. It's also emailed through
+// Proton's SMTP server (Cloudflare Workers can open outbound TCP) when the
+// SMTP_* and CONTACT_TO Secrets are set. Sender = SMTP_USER, Reply-To = the
+// visitor. No address or credential is in this repo (it's public) or any page.
 import type { APIRoute } from "astro";
-import { envOf, json } from "../../lib/store";
+import { WorkerMailer } from "worker-mailer";
+import { envOf, json, type Env } from "../../lib/store";
 
 export const prerender = false;
 
@@ -43,22 +43,38 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const id = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   const record: Record<string, unknown> = { id, name, email, order, message, received_at: new Date().toISOString(), emailed: false };
 
-  if (env.RESEND_API_KEY && env.CONTACT_TO && env.CONTACT_FROM) {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: env.CONTACT_FROM,
-        to: [env.CONTACT_TO],
-        reply_to: email,
-        subject: `Contact form: ${name}${order ? ` (order ${order})` : ""}`,
-        text: `From: ${name} <${email}>\n${order ? `Order: ${order}\n` : ""}\n${message}\n`,
-      }),
-    }).catch((e) => { console.error("resend", e); return null; });
-    record.emailed = !!res?.ok;
-    if (res && !res.ok) console.error("resend", res.status, await res.text().catch(() => ""));
+  if (env.SMTP_SERVER && env.SMTP_USER && env.SMTP_PASS && env.CONTACT_TO) {
+    try {
+      await sendMail(env, { name, email, order, message });
+      record.emailed = true;
+    } catch (e) {
+      console.error("smtp", e instanceof Error ? e.message : String(e)); // never logs credentials
+    }
   }
 
   await env.SALES.put(`contact:${id}`, JSON.stringify(record));
   return json({ ok: true });
 };
+
+async function sendMail(env: Env, m: { name: string; email: string; order: string; message: string }) {
+  const port = Number(env.SMTP_PORT ?? 587);
+  await WorkerMailer.send(
+    {
+      host: env.SMTP_SERVER!,
+      port,
+      secure: port === 465,      // 465 = TLS from the start; 587 = STARTTLS
+      startTls: port !== 465,
+      credentials: { username: env.SMTP_USER!, password: env.SMTP_PASS! },
+      authType: ["plain", "login"],
+      socketTimeoutMs: 15000,
+      responseTimeoutMs: 15000,
+    },
+    {
+      from: { name: "CSU Sports Cards website", email: env.SMTP_USER! },
+      to: env.CONTACT_TO!,
+      reply: { name: m.name, email: m.email },
+      subject: `Contact form: ${m.name}${m.order ? ` (order ${m.order})` : ""}`,
+      text: `From: ${m.name} <${m.email}>\n${m.order ? `Order: ${m.order}\n` : ""}\n${m.message}\n`,
+    },
+  );
+}

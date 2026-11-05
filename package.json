@@ -13,7 +13,8 @@
   "dependencies": {
     "@astrojs/cloudflare": "12.5.0",
     "@astrojs/sitemap": "3.3.0",
-    "astro": "5.7.4"
+    "astro": "5.7.4",
+    "worker-mailer": "1.2.1"
   },
   "devDependencies": {
     "wrangler": "4.16.1"
