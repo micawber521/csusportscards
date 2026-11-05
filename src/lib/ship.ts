@@ -12,7 +12,7 @@ export const GRAMS = {
   envelope: 5, slip: 5, strip: 6.7,          // manila strip: 1 per 6 cards, sleeve-only envelopes
   sleeve: 2.5, toploader: 9, slab: 50, pack: 28,
   bubble: 12, stiffeners: 25,                // stiffeners = front + back pair
-  box: 150,                                  // GUESS (box + packing), not weighed yet
+  box: 85,                                   // small box 6.5x7x4.5 in, weighed empty 2026-11-04
 };
 const OZ = 28.3495;
 const MARGIN_G = 3;                          // stay this far under an ounce line (locked tiers)
@@ -39,7 +39,7 @@ const BUBBLE_FLAT = 899;
 // undercharge. Rates: entities/CardProAI/SHIPPING_RATES.md (USPS Notice 123,
 // pulled 2026-09-20; re-check after USPS rate changes).
 const GA_ZONE8_BY_LB: [number, number][] = [
-  [1, 1067], [2, 1287], [3, 1575], [4, 1801], [5, 1919], [6, 2068],
+  [15.999 / 16, 840], [1, 1067], [2, 1287], [3, 1575], [4, 1801], [5, 1919], [6, 2068],
   [7, 2183], [8, 2290], [9, 2409], [10, 2534], [11, 2737], [12, 2873],
 ];
 const LB = 453.592;
