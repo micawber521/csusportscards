@@ -3,9 +3,10 @@
 import { byId, heading, type Card } from "./cards";
 import { shipPlan, type ShipPlan } from "./ship";
 import { money, type PayPalEnv } from "./paypal";
+import type { TcgEnv } from "./tcg";
 
 
-export interface Env extends PayPalEnv {
+export interface Env extends PayPalEnv, TcgEnv {
   SALES: KVNamespace;   // sold:<id> markers + sale:<orderId> records for Gordon
   SALES_TOKEN: string;  // shared with Gordon's poller (projects/csusportscards/poll_sales.py)
   // Optional Secrets for emailing contact-form messages through Proton SMTP.

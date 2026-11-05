@@ -7,6 +7,7 @@ import { paypal } from "../../../../lib/paypal";
 import { byId } from "../../../../lib/cards";
 import { envOf, json, soldIds } from "../../../../lib/store";
 import { shipPlan } from "../../../../lib/ship";
+import { createTcgOrder } from "../../../../lib/tcg";
 
 export const prerender = false;
 
@@ -38,6 +39,27 @@ export const POST: APIRoute = async ({ params, locals }) => {
   const shipTo = cap.data.purchase_units?.[0]?.shipping ?? unit?.shipping ?? {};
   const breakdown = unit?.amount?.breakdown ?? {};
   const plan = shipPlan(ids.map((id) => byId.get(id)!));
+
+  // Envelope orders: create the TCG Tracking order + label now (the buyer has
+  // already paid; a failure here never undoes the sale). Sandbox orders are
+  // prefixed TEST- so they're easy to spot and void in the TCG dashboard.
+  const live = env.PAYPAL_ENV === "live";
+  let tcg: Record<string, unknown> | undefined;
+  if (plan.ok && plan.mailer === "envelope") {
+    const r = await createTcgOrder(env, {
+      orderNum: `${live ? "" : "TEST-"}${orderId}`,
+      name: shipTo.name?.full_name ?? "",
+      address: shipTo.address ?? {},
+      cards: ids.map((id) => byId.get(id)!),
+    });
+    if (r.ok) {
+      tcg = { tracking_number: r.tracking_number, order: r.response.id ?? r.response.order_id ?? null };
+      if (r.pdf_base64) await env.SALES.put(`label:${orderId}`, r.pdf_base64);
+    } else {
+      tcg = { error: r.error };
+      console.error("tcg", r.error);
+    }
+  }
   await env.SALES.put(`sale:${orderId}`, JSON.stringify({
     order_id: orderId,
     capture_id: capture.id,
@@ -48,6 +70,7 @@ export const POST: APIRoute = async ({ params, locals }) => {
     ship: plan.ok
       ? { mailer: plan.mailer, carrier: plan.carrier, weight_g: plan.weight_g, postage_oz: plan.postage_oz, insure_cents: plan.insure_cents }
       : { mailer: "unknown", error: plan.reason },
+    ...(tcg ? { tcg } : {}),
     shipping_cents: breakdown.shipping ? cents(breakdown.shipping.value) : 0,
     total_cents: cents(capture.amount.value),
     buyer: { name: shipTo.name?.full_name ?? "", email: cap.data.payer?.email_address ?? "" },
