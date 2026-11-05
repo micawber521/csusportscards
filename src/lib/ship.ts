@@ -31,7 +31,22 @@ const BUBBLE_MAX_SLABS = 5;
 
 // Buyer prices (SHIPPING_PLAN.md §5).
 const ENV_FIRST = 125, ENV_EACH = 50, ENV_CAP = 600;
-const BUBBLE_FLAT = 899;                     // also charged for box orders until a box rate is set
+const BUBBLE_FLAT = 899;
+
+// Box orders (over 1 lb): buyer pays the zone 8 (worst-case) USPS Ground
+// Advantage commercial rate for the weight, rounded up to the next $x.99.
+// The buyer's ZIP isn't known when the price is set, so zone 8 means we never
+// undercharge. Rates: entities/CardProAI/SHIPPING_RATES.md (USPS Notice 123,
+// pulled 2026-09-20; re-check after USPS rate changes).
+const GA_ZONE8_BY_LB: [number, number][] = [
+  [1, 1067], [2, 1287], [3, 1575], [4, 1801], [5, 1919], [6, 2068],
+  [7, 2183], [8, 2290], [9, 2409], [10, 2534], [11, 2737], [12, 2873],
+];
+const LB = 453.592;
+function boxCents(grams: number): number | null {
+  const row = GA_ZONE8_BY_LB.find(([lb]) => grams <= lb * LB);
+  return row ? Math.ceil((row[1] + 1) / 100) * 100 - 1 : null;
+}
 const EXTRA_SLAB_CENTS = 0;                  // proposed $1 per slab after the first, not yet approved
 
 // Order cap until box shipping is priced.
@@ -92,9 +107,13 @@ export function shipPlan(items: ShipItem[]): ShipPlan {
   const bubbleW = GRAMS.bubble + GRAMS.stiffeners + GRAMS.slip + contents;
   const box = counts.slab > BUBBLE_MAX_SLABS || bubbleW > BUBBLE_MAX_G;
   const w = box ? GRAMS.box + GRAMS.slip + contents : bubbleW;
+  const boxPrice = box ? boxCents(w) : null;
+  if (box && boxPrice === null) {
+    return { ok: false, reason: "This order is too big to ship as one package. Please split it, or contact us." };
+  }
   return {
     ok: true, mailer: box ? "box" : "bubble", carrier: "Pirate Ship",
-    buyer_cents: BUBBLE_FLAT + EXTRA_SLAB_CENTS * Math.max(0, counts.slab - 1),
+    buyer_cents: box ? boxPrice! : BUBBLE_FLAT + EXTRA_SLAB_CENTS * Math.max(0, counts.slab - 1),
     weight_g: Math.round(w * 10) / 10,
     postage_oz: Math.ceil(w / OZ),
     insure_cents: value >= ENV_VALUE_LIMIT ? value : 0, counts,
