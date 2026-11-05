@@ -1,0 +1,23 @@
+{
+  "_note": "Featured players for the homepage (Christian 2026-11-04: Hall of Famers + our watchlist). Names must match the card's player name exactly (brackets like [Silver Signature] are ignored; multi-player cards match if any name matches). Add names as new cards come in.",
+  "hall_of_fame": {
+    "Basketball": [
+      "Alonzo Mourning", "Charles Barkley", "Chris Mullin", "Chris Webber", "Clyde Drexler",
+      "David Robinson", "Dominique Wilkins", "Grant Hill", "John Stockton", "Karl Malone",
+      "Kevin McHale", "Michael Jordan", "Patrick Ewing", "Scottie Pippen", "Shaquille O'Neal",
+      "Tim Hardaway"
+    ],
+    "Football": [
+      "Aeneas Williams", "Andre Reed", "Bruce Smith", "Chris Doleman", "Darrell Green",
+      "Derrick Thomas", "Jackie Slater", "Jerome Bettis", "Jerry Rice", "Junior Seau",
+      "Marshall Faulk", "Rickey Jackson", "Shannon Sharpe", "Tony Gonzalez", "Warren Moon"
+    ],
+    "Baseball": [
+      "Ken Griffey Jr.", "Derek Jeter", "Nolan Ryan", "Rickey Henderson", "Ozzie Smith"
+    ]
+  },
+  "watchlist": [
+    "Shohei Ohtani", "Aaron Judge", "Pete Crow-Armstrong", "Elly De La Cruz", "Roman Anthony",
+    "Bobby Witt Jr.", "Munetaka Murakami", "Mike Trout", "Bo Jackson"
+  ]
+}

@@ -1,21 +1,28 @@
 ---
 import Base from "../layouts/Base.astro";
 import { allCards, heading } from "../lib/cards";
+import featuredList from "../data/featured.json";
 
 // Sport filters: always these three (Baseball shows even with no cards yet),
 // plus any other sport that turns up in the export.
 const BASE_SPORTS = ["Baseball", "Basketball", "Football"];
 const sports = [...new Set([...BASE_SPORTS, ...allCards.map((c) => c.sport).filter(Boolean)])].sort();
 
-// Featured = the highest-priced cards (FEATURED_COUNT of them). Ties at the
-// cutoff price are broken randomly in the browser.
-const FEATURED_COUNT = 4;
+// Featured = cards of Hall of Famers or watchlist players (src/data/featured.json).
+// The browser shows FEATURED_COUNT of them at random on each visit.
+const FEATURED_COUNT = 5;
+const hofNames = new Set(Object.values(featuredList.hall_of_fame).flat());
+const watchNames = new Set(featuredList.watchlist);
+const playersOf = (player: string) => player.replace(/\[[^\]]*\]/g, "").split("/").map((n) => n.trim());
+// 1 = Hall of Famer, 2 = watchlist, 0 = neither
+const featuredKind = (player: string) =>
+  playersOf(player).some((n) => hofNames.has(n)) ? 1 : playersOf(player).some((n) => watchNames.has(n)) ? 2 : 0;
 
 // The page ships a small JSON index of every card; only the cards actually
 // shown get their images loaded, so the page stays fast as the catalog grows.
 const index = allCards.map((c) => ({
   s: c.slug, p: c.player, n: c.number, y: c.year, t: c.set, sp: c.sport, c: c.condition,
-  $: c.price_cents, i: c.front_sm, a: `${heading(c)} front`,
+  $: c.price_cents, i: c.front_sm, a: `${heading(c)} front`, f: featuredKind(c.player),
   k: [c.player, c.number, `#${c.number}`, c.year, c.set, c.sport, c.team, c.condition].join(" ").toLowerCase(),
 }));
 ---
@@ -37,7 +44,10 @@ const index = allCards.map((c) => ({
   </form>
 
   <section id="featured-wrap" hidden>
-    <h2>Featured</h2>
+    <div class="head">
+      <h2>Featured</h2>
+      <span class="muted small">Hall of Famers and players we're watching</span>
+    </div>
     <ul class="grid" id="featured"></ul>
   </section>
 
@@ -62,7 +72,7 @@ const index = allCards.map((c) => ({
 </Base>
 
 <script>
-  type C = { s: string; p: string; n: string; y: string; t: string; sp: string; c: string; $: number; i: string; a: string; k: string };
+  type C = { s: string; p: string; n: string; y: string; t: string; sp: string; c: string; $: number; i: string; a: string; k: string; f: number };
   const all: C[] = JSON.parse(document.getElementById("index")!.textContent!);
   const FEATURED = Number(document.getElementById("featured-count")!.textContent);
   const PICKS = 10;
@@ -80,13 +90,13 @@ const index = allCards.map((c) => ({
   };
   const tile = (c: C) => `<li><a href="/cards/${c.s}/">
       <img src="${c.i}" alt="${esc(c.a)}" width="360" height="500" loading="lazy" decoding="async">
-      <span class="name">${esc(c.p)} #${esc(c.n)}</span>
+      <span class="name">${esc(c.p)} #${esc(c.n)}</span>${c.f ? `<span class="hof">★ ${c.f === 1 ? "Hall of Famer" : "On our watchlist"}</span>` : ""}
       <span class="set">${esc(c.y)} ${esc(c.t)}</span>
       <span class="row"><span>${esc(c.c)}</span><strong>${dollars(c.$)}</strong></span></a></li>`;
   const fill = (id: string, cards: C[]) => { $(id).innerHTML = cards.map(tile).join(""); };
 
-  // Featured: top prices, random among ties at the cutoff.
-  const featured = shuffle(all).sort((a, b) => b.$ - a.$).slice(0, FEATURED);
+  // Featured: a random few of the Hall of Fame / watchlist cards.
+  const featured = shuffle(all.filter((c) => c.f)).slice(0, FEATURED);
   const featuredSet = new Set(featured);
   const drawPicks = () => fill("picks", shuffle(all.filter((c) => !featuredSet.has(c))).slice(0, PICKS));
 
@@ -157,6 +167,7 @@ const index = allCards.map((c) => ({
   #count { color: var(--muted); font-size: .9rem; }
   h2 { font-size: 1.1rem; margin: 24px 0 12px; }
   .head { display: flex; align-items: baseline; gap: 16px; }
+  .small { font-size: .9rem; }
   .link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-size: .95rem; }
   .more { margin: 20px 0 0; }
   .more button { padding: 10px 18px; font-size: 1rem; border-radius: 6px; cursor: pointer;
@@ -170,6 +181,7 @@ const index = allCards.map((c) => ({
   .grid :global(a:hover) { border-color: var(--accent); }
   .grid :global(img) { width: 100%; height: auto; aspect-ratio: 360 / 500; object-fit: contain; margin-bottom: 6px; }
   .grid :global(.name) { font-weight: 600; }
+  .grid :global(.hof) { color: var(--accent); font-size: .8rem; font-weight: 600; }
   .grid :global(.set) { color: var(--muted); font-size: .85rem; }
   .grid :global(.row) { display: flex; justify-content: space-between; align-items: baseline; margin-top: auto;
          padding-top: 6px; font-size: .85rem; color: var(--muted); }
