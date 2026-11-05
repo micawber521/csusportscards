@@ -1,11 +1,23 @@
 ---
 import Base from "../layouts/Base.astro";
-import { allCards, price, heading } from "../lib/cards";
+import { allCards, heading } from "../lib/cards";
 
-const sports = [...new Set(allCards.map((c) => c.sport))].sort();
-// Everything a buyer might type, lowercased once at build time.
-const haystack = (c: (typeof allCards)[number]) =>
-  [c.player, c.number, `#${c.number}`, c.year, c.set, c.sport, c.team, c.condition].join(" ").toLowerCase();
+// Sport filters: always these three (Baseball shows even with no cards yet),
+// plus any other sport that turns up in the export.
+const BASE_SPORTS = ["Baseball", "Basketball", "Football"];
+const sports = [...new Set([...BASE_SPORTS, ...allCards.map((c) => c.sport).filter(Boolean)])].sort();
+
+// Featured = the highest-priced cards (FEATURED_COUNT of them). Ties at the
+// cutoff price are broken randomly in the browser.
+const FEATURED_COUNT = 4;
+
+// The page ships a small JSON index of every card; only the cards actually
+// shown get their images loaded, so the page stays fast as the catalog grows.
+const index = allCards.map((c) => ({
+  s: c.slug, p: c.player, n: c.number, y: c.year, t: c.set, sp: c.sport, c: c.condition,
+  $: c.price_cents, i: c.front_sm, a: `${heading(c)} front`,
+  k: [c.player, c.number, `#${c.number}`, c.year, c.set, c.sport, c.team, c.condition].join(" ").toLowerCase(),
+}));
 ---
 <Base
   title="CSU Sports Cards — raw baseball, basketball and football singles"
@@ -14,82 +26,152 @@ const haystack = (c: (typeof allCards)[number]) =>
   <h1>Cards for sale</h1>
   <p class="lede">{allCards.length} cards · every photo is the actual card.</p>
 
+  <div class="filters" role="group" aria-label="Filter by sport">
+    <button type="button" data-sport="" aria-pressed="true">All</button>
+    {sports.map((s) => <button type="button" data-sport={s} aria-pressed="false">{s}</button>)}
+  </div>
+
   <form class="search" role="search" onsubmit="return false">
     <input id="q" type="search" placeholder="Search player, team, set, year or card #" aria-label="Search cards" autocomplete="off" />
     <span id="count" aria-live="polite"></span>
   </form>
 
-  {sports.map((sport) => (
-    <section data-sport>
-      <h2>{sport}</h2>
-      <ul class="grid">
-        {allCards.filter((c) => c.sport === sport).map((c) => (
-          <li data-search={haystack(c)}>
-            <a href={`/cards/${c.slug}/`}>
-              <img src={c.front_sm} alt={`${heading(c)} front`} width="360" height="500" loading="lazy" />
-              <span class="name">{c.player} #{c.number}</span>
-              <span class="set">{c.year} {c.set}</span>
-              <span class="row"><span>{c.condition}</span><strong>{price(c.price_cents)}</strong></span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ))}
-  <p id="none" hidden>No cards match that search.</p>
+  <section id="featured-wrap" hidden>
+    <h2>Featured</h2>
+    <ul class="grid" id="featured"></ul>
+  </section>
+
+  <section id="picks-wrap" hidden>
+    <div class="head">
+      <h2>Random picks</h2>
+      <button type="button" class="link" id="shuffle">Shuffle</button>
+    </div>
+    <ul class="grid" id="picks"></ul>
+    <p class="more"><button type="button" id="browse">Browse all {allCards.length} cards</button></p>
+  </section>
+
+  <section id="results-wrap" hidden>
+    <h2 id="results-title"></h2>
+    <ul class="grid" id="results"></ul>
+    <p class="more"><button type="button" id="more" hidden>Show more</button></p>
+    <p id="none" class="muted" hidden></p>
+  </section>
+
+  <script id="index" type="application/json" set:html={JSON.stringify(index)} />
+  <script id="featured-count" type="application/json" set:html={String(FEATURED_COUNT)} />
 </Base>
 
 <script>
-  // Filters the grid in place. Every word typed must match (so "jazz 1997"
-  // narrows instead of widening). The query is kept in ?q= so a search can
-  // be bookmarked or shared.
-  const input = document.getElementById("q") as HTMLInputElement;
-  const count = document.getElementById("count")!;
-  const none = document.getElementById("none")!;
-  const items = [...document.querySelectorAll<HTMLLIElement>("li[data-search]")];
-  const sections = [...document.querySelectorAll<HTMLElement>("section[data-sport]")];
+  type C = { s: string; p: string; n: string; y: string; t: string; sp: string; c: string; $: number; i: string; a: string; k: string };
+  const all: C[] = JSON.parse(document.getElementById("index")!.textContent!);
+  const FEATURED = Number(document.getElementById("featured-count")!.textContent);
+  const PICKS = 10;
+  const PAGE = 24;
+  const $ = (id: string) => document.getElementById(id)!;
+  const input = $("q") as HTMLInputElement;
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>(".filters button")];
 
-  const apply = () => {
+  const esc = (s: string) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
+  const dollars = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const shuffle = <T,>(xs: T[]) => {
+    const a = [...xs];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  };
+  const tile = (c: C) => `<li><a href="/cards/${c.s}/">
+      <img src="${c.i}" alt="${esc(c.a)}" width="360" height="500" loading="lazy" decoding="async">
+      <span class="name">${esc(c.p)} #${esc(c.n)}</span>
+      <span class="set">${esc(c.y)} ${esc(c.t)}</span>
+      <span class="row"><span>${esc(c.c)}</span><strong>${dollars(c.$)}</strong></span></a></li>`;
+  const fill = (id: string, cards: C[]) => { $(id).innerHTML = cards.map(tile).join(""); };
+
+  // Featured: top prices, random among ties at the cutoff.
+  const featured = shuffle(all).sort((a, b) => b.$ - a.$).slice(0, FEATURED);
+  const featuredSet = new Set(featured);
+  const drawPicks = () => fill("picks", shuffle(all.filter((c) => !featuredSet.has(c))).slice(0, PICKS));
+
+  let sport = "";
+  let browsing = false;
+  let matches: C[] = [];
+  let shown = 0;
+
+  function showMore() {
+    shown = Math.min(shown + PAGE, matches.length);
+    fill("results", matches.slice(0, shown));
+    $("more").hidden = shown >= matches.length;
+  }
+
+  function apply() {
     const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
-    let shown = 0;
-    for (const li of items) {
-      const hit = words.every((w) => li.dataset.search!.includes(w));
-      li.hidden = !hit;
-      if (hit) shown++;
+    for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.sport === sport));
+    const home = !sport && !words.length && !browsing;
+
+    $("featured-wrap").hidden = !home || !featured.length;
+    $("picks-wrap").hidden = !home;
+    $("results-wrap").hidden = home;
+    $("count").textContent = "";
+
+    if (!home) {
+      matches = all.filter((c) => (!sport || c.sp === sport) && words.every((w) => c.k.includes(w)));
+      $("results-title").textContent = sport ? `${sport} cards` : words.length ? "Search results" : "All cards";
+      if (words.length) $("count").textContent = `${matches.length} match${matches.length === 1 ? "" : "es"}`;
+      $("none").hidden = matches.length > 0;
+      $("none").textContent = sport && !words.length ? `No ${sport.toLowerCase()} cards yet. Check back soon.` : "No cards match that search.";
+      shown = 0;
+      showMore();
     }
-    for (const s of sections) s.hidden = !s.querySelector("li:not([hidden])");
-    none.hidden = shown > 0;
-    count.textContent = words.length ? `${shown} of ${items.length}` : "";
+
     const url = new URL(location.href);
+    sport ? url.searchParams.set("sport", sport) : url.searchParams.delete("sport");
     words.length ? url.searchParams.set("q", input.value.trim()) : url.searchParams.delete("q");
     history.replaceState(null, "", url);
-  };
+  }
 
-  input.value = new URLSearchParams(location.search).get("q") ?? "";
-  input.addEventListener("input", apply);
+  for (const b of buttons) b.addEventListener("click", () => { sport = b.dataset.sport!; browsing = false; apply(); });
+  input.addEventListener("input", () => { browsing = false; apply(); });
+  $("shuffle").addEventListener("click", drawPicks);
+  $("browse").addEventListener("click", () => { browsing = true; apply(); });
+  $("more").addEventListener("click", showMore);
+
+  const params = new URLSearchParams(location.search);
+  sport = buttons.some((b) => b.dataset.sport === params.get("sport")) ? params.get("sport")! : "";
+  input.value = params.get("q") ?? "";
+  fill("featured", featured);
+  drawPicks();
   apply();
 </script>
 
 <style>
   h1 { margin: 0 0 4px; }
   .lede { color: var(--muted); margin: 0 0 16px; }
+  .muted { color: var(--muted); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .filters button { padding: 6px 14px; font-size: .95rem; border-radius: 999px; cursor: pointer;
+                    background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+  .filters button:hover { border-color: var(--accent); }
+  .filters button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
   .search { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
   .search input { flex: 1; max-width: 480px; padding: 10px 12px; font-size: 1rem; color: var(--text);
                   background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
   .search input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   #count { color: var(--muted); font-size: .9rem; }
-  #none { color: var(--muted); margin-top: 24px; }
   h2 { font-size: 1.1rem; margin: 24px 0 12px; }
+  .head { display: flex; align-items: baseline; gap: 16px; }
+  .link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-size: .95rem; }
+  .more { margin: 20px 0 0; }
+  .more button { padding: 10px 18px; font-size: 1rem; border-radius: 6px; cursor: pointer;
+                 background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+  .more button:hover { border-color: var(--accent); }
   .grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px;
           grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
-  .grid a { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 10px;
+  .grid :global(a) { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 10px;
             background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
             text-decoration: none; color: var(--text); }
-  .grid a:hover { border-color: var(--accent); }
-  .grid img { width: 100%; height: auto; aspect-ratio: 360 / 500; object-fit: contain; margin-bottom: 6px; }
-  .name { font-weight: 600; }
-  .set { color: var(--muted); font-size: .85rem; }
-  .row { display: flex; justify-content: space-between; align-items: baseline; margin-top: auto;
+  .grid :global(a:hover) { border-color: var(--accent); }
+  .grid :global(img) { width: 100%; height: auto; aspect-ratio: 360 / 500; object-fit: contain; margin-bottom: 6px; }
+  .grid :global(.name) { font-weight: 600; }
+  .grid :global(.set) { color: var(--muted); font-size: .85rem; }
+  .grid :global(.row) { display: flex; justify-content: space-between; align-items: baseline; margin-top: auto;
          padding-top: 6px; font-size: .85rem; color: var(--muted); }
-  .row strong { color: var(--text); font-size: 1rem; }
+  .grid :global(.row strong) { color: var(--text); font-size: 1rem; }
 </style>

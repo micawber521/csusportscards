@@ -68,7 +68,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     {PREVIEW && <div class="banner">Test mode — checkout uses PayPal's sandbox, so no real payments are taken.</div>}
     <main class="wrap"><slot /></main>
     <footer>
-      <div class="wrap">Shipping: $1.25 per order, plus $0.50 for each additional card. Every card pictured is the exact card you get.</div>
+      <div class="wrap">Shipping: $1.25 for the first card plus $0.50 for each additional card, capped at $6.00. Larger orders ship in a padded mailer. Every card pictured is the exact card you get.</div>
     </footer>
     <script>
       import { cartCount } from "../lib/cart";
