@@ -2,27 +2,32 @@
 import Base from "../layouts/Base.astro";
 import { allCards, heading } from "../lib/cards";
 import featuredList from "../data/featured.json";
+import hof from "../data/hof.json";
 
 // Sport filters: always these three (Baseball shows even with no cards yet),
 // plus any other sport that turns up in the export.
 const BASE_SPORTS = ["Baseball", "Basketball", "Football"];
 const sports = [...new Set([...BASE_SPORTS, ...allCards.map((c) => c.sport).filter(Boolean)])].sort();
 
-// Featured = cards of Hall of Famers or watchlist players (src/data/featured.json).
+// Featured = cards of Hall of Famers (src/data/hof.json, from ../../update_hof.py)
+// or watchlist players (src/data/featured.json), matched within the card's sport.
 // The browser shows FEATURED_COUNT of them at random on each visit.
 const FEATURED_COUNT = 5;
-const hofNames = new Set(Object.values(featuredList.hall_of_fame).flat());
+const hofBySport = hof as unknown as Record<string, string[]>;
+const notHof = featuredList.not_hof as Record<string, string[]>;
+const isHof = (sport: string, name: string) =>
+  (hofBySport[sport] ?? []).includes(name) && !(notHof[sport] ?? []).includes(name);
 const watchNames = new Set(featuredList.watchlist);
 const playersOf = (player: string) => player.replace(/\[[^\]]*\]/g, "").split("/").map((n) => n.trim());
 // 1 = Hall of Famer, 2 = watchlist, 0 = neither
-const featuredKind = (player: string) =>
-  playersOf(player).some((n) => hofNames.has(n)) ? 1 : playersOf(player).some((n) => watchNames.has(n)) ? 2 : 0;
+const featuredKind = (sport: string, player: string) =>
+  playersOf(player).some((n) => isHof(sport, n)) ? 1 : playersOf(player).some((n) => watchNames.has(n)) ? 2 : 0;
 
 // The page ships a small JSON index of every card; only the cards actually
 // shown get their images loaded, so the page stays fast as the catalog grows.
 const index = allCards.map((c) => ({
   s: c.slug, p: c.player, n: c.number, y: c.year, t: c.set, sp: c.sport, c: c.condition,
-  $: c.price_cents, i: c.front_sm, a: `${heading(c)} front`, f: featuredKind(c.player),
+  $: c.price_cents, i: c.front_sm, a: `${heading(c)} front`, f: featuredKind(c.sport, c.player),
   k: [c.player, c.number, `#${c.number}`, c.year, c.set, c.sport, c.team, c.condition].join(" ").toLowerCase(),
 }));
 ---
