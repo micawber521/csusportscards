@@ -47,6 +47,13 @@ export async function soldIds(env: Env, cards: Card[]): Promise<number[]> {
 // poll behind cards.db even though the catalog itself only rebuilds once a day.
 export const UNAVAILABLE_KEY = "unavailable";
 
+// "Something is waiting for Gordon" flag. Set whenever a sale:* or contact:*
+// record is written, so Gordon's 5-minute poll can do one cheap KV read instead
+// of two KV lists (free plan: 1,000 lists/day, 288 polls/day). Cleared by
+// GET /api/sales when it lists and finds nothing left.
+export const PENDING_KEY = "pending";
+export const markPending = (env: Env) => env.SALES.put(PENDING_KEY, String(Date.now()));
+
 export async function unavailableSet(env: Env): Promise<Set<number>> {
   const list = (await env.SALES.get(UNAVAILABLE_KEY, "json")) as number[] | null;
   return new Set(Array.isArray(list) ? list.map(Number) : []);

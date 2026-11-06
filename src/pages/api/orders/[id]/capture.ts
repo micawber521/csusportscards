@@ -5,7 +5,7 @@
 import type { APIRoute } from "astro";
 import { paypal } from "../../../../lib/paypal";
 import { byId } from "../../../../lib/cards";
-import { envOf, itemTaxes, json, unavailableIds } from "../../../../lib/store";
+import { envOf, itemTaxes, json, markPending, unavailableIds } from "../../../../lib/store";
 import { shipPlan } from "../../../../lib/ship";
 import { createTcgOrder } from "../../../../lib/tcg";
 
@@ -89,6 +89,7 @@ export const POST: APIRoute = async ({ params, locals }) => {
     ship_to: shipTo.address ?? {},
     captured_at: capture.create_time ?? new Date().toISOString(),
   }));
+  await markPending(env);
 
   return json({ ok: true, order_id: orderId });
 };

@@ -5,7 +5,7 @@
 // visitor. No address or credential is in this repo (it's public) or any page.
 import type { APIRoute } from "astro";
 import { WorkerMailer } from "worker-mailer";
-import { envOf, json, type Env } from "../../lib/store";
+import { envOf, json, markPending, type Env } from "../../lib/store";
 
 export const prerender = false;
 
@@ -53,6 +53,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   await env.SALES.put(`contact:${id}`, JSON.stringify(record));
+  await markPending(env);
   return json({ ok: true });
 };
 
