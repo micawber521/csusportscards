@@ -41,6 +41,25 @@ export async function soldIds(env: Env, cards: Card[]): Promise<number[]> {
   return cards.filter((_, i) => hits[i] !== null).map((c) => c.id);
 }
 
+// KV key holding the ids Gordon says are no longer for sale (relisted or sold on
+// eBay, any status other than 'ended' in cards.db). Gordon's poller pushes it every
+// few minutes via POST /api/sales {unavailable}, so checkout is never more than a
+// poll behind cards.db even though the catalog itself only rebuilds once a day.
+export const UNAVAILABLE_KEY = "unavailable";
+
+export async function unavailableSet(env: Env): Promise<Set<number>> {
+  const list = (await env.SALES.get(UNAVAILABLE_KEY, "json")) as number[] | null;
+  return new Set(Array.isArray(list) ? list.map(Number) : []);
+}
+
+// Cards that can't be bought right now: sold on the site OR flagged by Gordon.
+export async function unavailableIds(env: Env, cards: Card[]): Promise<number[]> {
+  const [sold, flagged] = await Promise.all([soldIds(env, cards), unavailableSet(env)]);
+  const out = new Set(sold);
+  for (const c of cards) if (flagged.has(c.id)) out.add(c.id);
+  return [...out];
+}
+
 // Missouri sales tax: charged only when the PayPal ship-to state is MO, at the
 // seller-location rate (MO in-state sales are origin-based). Computed per item
 // (PayPal requires tax_total = sum of item taxes) on card prices only; the

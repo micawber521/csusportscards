@@ -1,11 +1,11 @@
 // Captures a buyer-approved PayPal order, then marks its cards sold and saves
-// the sale for Gordon to pick up. Checks the sold list once more right before
+// the sale for Gordon to pick up. Checks sold + Gordon's unavailable list once more right before
 // taking the money, so two buyers racing for one card can't both be charged
 // (the loser's approved order is simply never captured).
 import type { APIRoute } from "astro";
 import { paypal } from "../../../../lib/paypal";
 import { byId } from "../../../../lib/cards";
-import { envOf, itemTaxes, json, soldIds } from "../../../../lib/store";
+import { envOf, itemTaxes, json, unavailableIds } from "../../../../lib/store";
 import { shipPlan } from "../../../../lib/ship";
 import { createTcgOrder } from "../../../../lib/tcg";
 
@@ -35,8 +35,8 @@ export const POST: APIRoute = async ({ params, locals }) => {
     return json({ error: "Your total needs updating for your shipping address. You have not been charged — please try again." }, 409);
   }
 
-  const sold = await soldIds(env, ids.map((id) => byId.get(id)!));
-  if (sold.length) return json({ error: "Sorry — a card in your cart just sold. You have not been charged.", sold }, 409);
+  const sold = await unavailableIds(env, ids.map((id) => byId.get(id)!));
+  if (sold.length) return json({ error: "Sorry, a card in your cart is no longer available. You have not been charged.", sold }, 409);
 
   const cap = await paypal(env, "POST", `/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {});
   const capture = cap.data.purchase_units?.[0]?.payments?.captures?.[0];
