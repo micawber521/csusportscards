@@ -216,6 +216,24 @@
     "pack": "sleeve"
   },
   {
+    "id": 457,
+    "slug": "1996-fleer-shaquille-oneal-79-457",
+    "title": "Shaquille O'Neal #79 | 1996 Fleer | Orlando Magic",
+    "player": "Shaquille O'Neal",
+    "number": "79",
+    "year": "1996",
+    "set": "Fleer",
+    "sport": "Basketball",
+    "team": "Orlando Magic",
+    "condition": "Excellent",
+    "price_cents": 125,
+    "front": "/cards/1996-fleer-shaquille-oneal-79-457-front.webp",
+    "front_sm": "/cards/1996-fleer-shaquille-oneal-79-457-front-sm.webp",
+    "back": "/cards/1996-fleer-shaquille-oneal-79-457-back.webp",
+    "back_sm": "/cards/1996-fleer-shaquille-oneal-79-457-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
     "id": 462,
     "slug": "1995-upper-deck-scottie-pippen-167-462",
     "title": "Scottie Pippen #167 | 1995 Upper Deck | Chicago Bulls",
@@ -3021,6 +3039,24 @@
     "front_sm": "/cards/1994-fleer-muggsy-bogues-19-4737-front-sm.webp",
     "back": "/cards/1994-fleer-muggsy-bogues-19-4737-back.webp",
     "back_sm": "/cards/1994-fleer-muggsy-bogues-19-4737-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
+    "id": 4741,
+    "slug": "1992-upper-deck-mcdonalds-tom-gugliotta-p50-4741",
+    "title": "Tom Gugliotta #P50 | 1992 Upper Deck McDonald's | Bullets",
+    "player": "Tom Gugliotta",
+    "number": "P50",
+    "year": "1992",
+    "set": "Upper Deck McDonald's",
+    "sport": "Basketball",
+    "team": "Bullets",
+    "condition": "Excellent",
+    "price_cents": 125,
+    "front": "/cards/1992-upper-deck-mcdonalds-tom-gugliotta-p50-4741-front.webp",
+    "front_sm": "/cards/1992-upper-deck-mcdonalds-tom-gugliotta-p50-4741-front-sm.webp",
+    "back": "/cards/1992-upper-deck-mcdonalds-tom-gugliotta-p50-4741-back.webp",
+    "back_sm": "/cards/1992-upper-deck-mcdonalds-tom-gugliotta-p50-4741-back-sm.webp",
     "pack": "sleeve"
   },
   {
