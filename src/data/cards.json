@@ -144,6 +144,24 @@
     "pack": "sleeve"
   },
   {
+    "id": 182,
+    "slug": "1995-upper-deck-hakeem-olajuwon-electric-court-138-182",
+    "title": "Hakeem Olajuwon [Electric Court] #138 | 1995 Upper Deck | Houston Rockets",
+    "player": "Hakeem Olajuwon [Electric Court]",
+    "number": "138",
+    "year": "1995",
+    "set": "Upper Deck",
+    "sport": "Basketball",
+    "team": "Houston Rockets",
+    "condition": "Excellent",
+    "price_cents": 195,
+    "front": "/cards/1995-upper-deck-hakeem-olajuwon-electric-court-138-182-front.webp",
+    "front_sm": "/cards/1995-upper-deck-hakeem-olajuwon-electric-court-138-182-front-sm.webp",
+    "back": "/cards/1995-upper-deck-hakeem-olajuwon-electric-court-138-182-back.webp",
+    "back_sm": "/cards/1995-upper-deck-hakeem-olajuwon-electric-court-138-182-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
     "id": 199,
     "slug": "1995-upper-deck-clyde-drexler-56-199",
     "title": "Clyde Drexler #56 | 1995 Upper Deck | Houston Rockets",
@@ -3456,6 +3474,24 @@
     "pack": "sleeve"
   },
   {
+    "id": 4837,
+    "slug": "1992-upper-deck-mcdonalds-patrick-ewing-p28-4837",
+    "title": "Patrick Ewing #P28 | 1992 Upper Deck McDonald's | New York Knicks",
+    "player": "Patrick Ewing",
+    "number": "P28",
+    "year": "1992",
+    "set": "Upper Deck McDonald's",
+    "sport": "Basketball",
+    "team": "New York Knicks",
+    "condition": "Very good",
+    "price_cents": 125,
+    "front": "/cards/1992-upper-deck-mcdonalds-patrick-ewing-p28-4837-front.webp",
+    "front_sm": "/cards/1992-upper-deck-mcdonalds-patrick-ewing-p28-4837-front-sm.webp",
+    "back": "/cards/1992-upper-deck-mcdonalds-patrick-ewing-p28-4837-back.webp",
+    "back_sm": "/cards/1992-upper-deck-mcdonalds-patrick-ewing-p28-4837-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
     "id": 4840,
     "slug": "1994-hoops-jason-kidd-shawn-bradley-422-4840",
     "title": "Jason Kidd / Shawn Bradley #422 | 1994 Hoops",
@@ -3546,6 +3582,24 @@
     "pack": "sleeve"
   },
   {
+    "id": 4882,
+    "slug": "1994-hoops-clyde-drexler-174-4882",
+    "title": "Clyde Drexler #174 | 1994 Hoops | Portland Trail Blazers",
+    "player": "Clyde Drexler",
+    "number": "174",
+    "year": "1994",
+    "set": "Hoops",
+    "sport": "Basketball",
+    "team": "Portland Trail Blazers",
+    "condition": "Near mint or better",
+    "price_cents": 125,
+    "front": "/cards/1994-hoops-clyde-drexler-174-4882-front.webp",
+    "front_sm": "/cards/1994-hoops-clyde-drexler-174-4882-front-sm.webp",
+    "back": "/cards/1994-hoops-clyde-drexler-174-4882-back.webp",
+    "back_sm": "/cards/1994-hoops-clyde-drexler-174-4882-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
     "id": 4884,
     "slug": "1994-playoff-leon-lett-216-4884",
     "title": "Leon Lett #216 | 1994 Playoff | Dallas Cowboys",
@@ -3579,6 +3633,24 @@
     "front_sm": "/cards/1990-topps-eric-metcalf-157-4892-front-sm.webp",
     "back": "/cards/1990-topps-eric-metcalf-157-4892-back.webp",
     "back_sm": "/cards/1990-topps-eric-metcalf-157-4892-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
+    "id": 4896,
+    "slug": "1994-hoops-dallas-mavericks-396-4896",
+    "title": "Dallas Mavericks #396 | 1994 Hoops | Dallas Mavericks",
+    "player": "Dallas Mavericks",
+    "number": "396",
+    "year": "1994",
+    "set": "Hoops",
+    "sport": "Basketball",
+    "team": "Dallas Mavericks",
+    "condition": "Excellent",
+    "price_cents": 125,
+    "front": "/cards/1994-hoops-dallas-mavericks-396-4896-front.webp",
+    "front_sm": "/cards/1994-hoops-dallas-mavericks-396-4896-front-sm.webp",
+    "back": "/cards/1994-hoops-dallas-mavericks-396-4896-back.webp",
+    "back_sm": "/cards/1994-hoops-dallas-mavericks-396-4896-back-sm.webp",
     "pack": "sleeve"
   },
   {
@@ -3633,6 +3705,24 @@
     "front_sm": "/cards/1994-topps-jim-harbaugh-610-4909-front-sm.webp",
     "back": "/cards/1994-topps-jim-harbaugh-610-4909-back.webp",
     "back_sm": "/cards/1994-topps-jim-harbaugh-610-4909-back-sm.webp",
+    "pack": "sleeve"
+  },
+  {
+    "id": 4918,
+    "slug": "1992-upper-deck-mcdonalds-terry-porter-p34-4918",
+    "title": "Terry Porter #P34 | 1992 Upper Deck McDonald's | Portland Trail Blazers",
+    "player": "Terry Porter",
+    "number": "P34",
+    "year": "1992",
+    "set": "Upper Deck McDonald's",
+    "sport": "Basketball",
+    "team": "Portland Trail Blazers",
+    "condition": "Excellent",
+    "price_cents": 125,
+    "front": "/cards/1992-upper-deck-mcdonalds-terry-porter-p34-4918-front.webp",
+    "front_sm": "/cards/1992-upper-deck-mcdonalds-terry-porter-p34-4918-front-sm.webp",
+    "back": "/cards/1992-upper-deck-mcdonalds-terry-porter-p34-4918-back.webp",
+    "back_sm": "/cards/1992-upper-deck-mcdonalds-terry-porter-p34-4918-back-sm.webp",
     "pack": "sleeve"
   },
   {
